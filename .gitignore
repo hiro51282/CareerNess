@@ -1,0 +1,5 @@
+# codex-workbench-main ディレクトリ自体は無視せず、その「中身」をすべて無視する
+codex-workbench-main/*
+
+# docs フォルダだけは無視しない（例外設定）
+!codex-workbench-main/docs/
