@@ -3,3 +3,6 @@ codex-workbench-main/*
 
 # docs フォルダだけは無視しない（例外設定）
 !codex-workbench-main/docs/
+!codex-workbench-main/implementation
+tmp/*
+!tmp/.gitkeep
