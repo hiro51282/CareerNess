@@ -84,6 +84,7 @@ updated_at: 2026-05-12
 ## Optional Fields
 
 - `role_hints`
+- `title_hints`
 - `tags`
 - `related_fact_ids`
 - `employer_id`
@@ -95,7 +96,9 @@ updated_at: 2026-05-12
 
 - title は保存してよい
 - role は保存してよい
-- ただし title / role だけで fact を成立させない
+- ただし title / role は derived metadata に近く、truth の中心ではない
+- action / decision / impact / context が先で、title / role は後から導出・整理されうる
+- title / role だけで fact を成立させない
 
 悪い例:
 

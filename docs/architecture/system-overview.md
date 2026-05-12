@@ -10,6 +10,20 @@ Codex AppServer
 CareerVault (Local Workspace)
 ```
 
+apply の責務を含めて見ると、実際の意図は次に近い。
+
+```text
+AI
+  ↓
+Patch proposal
+  ↓
+Browser / Local runtime review
+  ↓
+Local apply
+  ↓
+CareerVault update
+```
+
 この構成の意図は、UI、AI orchestration、ユーザーデータの正本を分離することにある。特に重要なのは、CareerVault がクラウド上のデータストアではなく、ユーザーが所有する local workspace である点である。
 
 ## 全体像
@@ -42,7 +56,7 @@ CareerVault は、ユーザーのキャリア情報を保持する local workspa
 3. Browser が AppServer 経由で AI セッションを開始する
 4. AI は attach 済み workspace の中だけを参照して質問や提案を行う
 5. facts の追加や profile 更新は patch proposal として提示される
-6. ユーザー承認後に workspace へ反映される
+6. ユーザー承認後、local runtime / workspace side validation を通して反映される
 7. 必要に応じて export を生成する
 
 ## 設計上の判断

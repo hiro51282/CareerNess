@@ -14,6 +14,7 @@ CareerNess の backend は AppServer であり、AI orchestration layer とし�
 - CareerVault の source of truth になる
 - facts / profiles / exports を恒久保存する
 - unrestricted local access の代理になる
+- local workspace owner のように振る舞う
 
 ## Suggested Modules
 
@@ -22,6 +23,7 @@ CareerNess の backend は AppServer であり、AI orchestration layer とし�
 - auth session
 - workspace attachment state
 - conversation session state
+- patch review session state
 
 ### AI Orchestration Layer
 
@@ -40,7 +42,7 @@ CareerNess の backend は AppServer であり、AI orchestration layer とし�
 ### Workspace Gateway
 
 - read-only listing / preview
-- approved apply
+- approved apply request
 - history append
 - rollback patch generation
 
@@ -57,9 +59,18 @@ backend に残るのは transient context を原則とする。
 - keep: session metadata, request correlation, minimal operational logs
 - avoid: full workspace mirror, long-lived career data cache
 
+session は truth ではない。
+
+- inferred facts
+- user corrections
+- pending confirmations
+
+のような domain-relevant state は、必要なら workspace 側の `proposed` / `pending` / `confirmed` な記録へ落とし込む。backend session 内だけに残して hidden truth 化しない。
+
 ## Boundary With Workspace
 
 workspace structure と canonical schema は local workspace 側に寄せる。backend はそれを解釈し補助するが、独自 canonical schema を内側に持って上書きしてはいけない。
+apply の最終判定も workspace side validation を通す。AppServer は patch proposal を生成・搬送できても、truth owner にはならない。
 
 ## Boundary With Frontend
 
@@ -79,6 +90,7 @@ MVP では小さく保つ。
 - backend 内部 DB に canonical facts を複製する
 - profile/export の再生成結果だけを backend に残し workspace に戻さない
 - AI prompt 用 convenience cache を truth 扱いする
+- login state を workspace ownership と誤結合する
 
 ## Open Questions
 

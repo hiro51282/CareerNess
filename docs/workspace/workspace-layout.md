@@ -31,7 +31,7 @@ README では `narratives/` の例もある。MVP では `profiles/` を推奨�
 - 職歴 facts
 - 成果 facts
 - 技術スタック facts
-- role / responsibility facts
+- responsibility / decision / impact facts
 - interview や対話から抽出した確認済み事項
 
 入れないもの:
@@ -106,3 +106,9 @@ workspace layout は単なる整理ではなく、AI の能力境界でもある
 - ファイル形式を markdown 中心にするか YAML / JSON を併用するかは未確定
 - `attachments/` を MVP で必須にするかは未確定
 - `embeddings/` を workspace 配下に置くかどうかは未確定
+
+MVP では embeddings を前提機能にしない。
+
+- embeddings は未使用でも成立する設計を保つ
+- embedding index を hidden truth source にしない
+- 将来追加する場合も canonical facts の代替にしない

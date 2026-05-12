@@ -11,6 +11,9 @@
 - AppServer は orchestration を担うが正本は保持しない
 - AI は unrestricted shell / file access を前提にしない
 - patch proposal と user approval を重視する
+- session は cache / temporary context であり truth ではない
+- role/title は derived metadata であり truth の中心ではない
+- patch は 1 semantic change 単位を原則とする
 
 ## まだ未確定のもの
 
@@ -18,3 +21,5 @@
 - fact schema の厳密度
 - sync の扱い
 - embeddings の位置づけ
+
+ただし MVP は embeddings 未使用でも成立させる。

@@ -24,6 +24,8 @@ CareerVault/
 └── meta/
 ```
 
+MVP では `embeddings/` を前提 directory に含めない。必要になっても optional 扱いに留め、canonical truth をそこへ置かない。
+
 ## Directory Notes
 
 ### `facts/projects/`
@@ -32,7 +34,7 @@ project に紐づく facts を置く。MVP では project 単位ファイルで�
 
 ### `profiles/`
 
-role-oriented view を置く。正本ではなく regenerate 可能な派生表現である。
+role-oriented view や audience-oriented view を置く。正本ではなく regenerate 可能な派生表現である。ここでの role は facts から整理された見せ方であり、primary truth ではない。
 
 ### `exports/`
 

@@ -8,6 +8,7 @@ CareerNess の AI は「何でもできる agent」ではなく、workspace-scop
 - tool は capability whitelist である
 - direct filesystem mutation は tool から分離する
 - user-owned truth は tool 経由でも越権更新しない
+- MVP では attach 済み workspace 以外へ capability を広げない
 
 ## Tool Categories
 
@@ -45,6 +46,7 @@ patch tool は file write ではなく patch object を返す。
 - rollback preparation
 
 apply tool は user approval token か approval state を前提とする。AI が任意に叩く前提にはしない。
+また apply の実行主体は local runtime / workspace side を基本とし、AppServer は approval と proposal を接続する層として扱う。
 
 ## Minimum Safe Tool Set
 
@@ -67,6 +69,15 @@ tool には次の制約を組み込む。
 - hidden retention 用の外部保存をしない
 - attach されていない別 workspace を参照しない
 - unrestricted shell 相当の escape hatch を用意しない
+
+MVP で scope 外にする capability:
+
+- clipboard read/write
+- browser history read
+- screenshot capture
+- arbitrary local files read
+- OS-level search outside attached workspace
+- background indexing outside attached workspace
 
 ## Fact Safety Rules
 
@@ -94,6 +105,7 @@ AppServer は tool を束ねる orchestration layer である。
 - workspace-scoped capability を付与する
 - proposal と approval を接続する
 - truth を自分で保持しない
+- local apply request を中継しても、workspace ownership は取得しない
 
 AppServer 自体が canonical state store になってはいけない。
 
@@ -103,6 +115,7 @@ AppServer 自体が canonical state store になってはいけない。
 - profile generation tool が fact update を内包する
 - export tool が暗黙に history 以外の file mutation を行う
 - tool response 内で workspace 外参照を許す
+- session memory だけに correction や inferred fact を残す
 
 ## Open Questions
 

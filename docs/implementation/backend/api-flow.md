@@ -29,7 +29,7 @@ POST approval decision
   ↓
 Patch re-validation
   ↓
-Workspace apply
+Local runtime / workspace apply
   ↓
 History append
   ↓
@@ -74,9 +74,11 @@ Updated workspace summary returned
 ## API Rules
 
 - `generate proposal` と `apply patch` を同じ call にしない
+- `approve patch` と `apply patch` も概念上は分離する
 - fact 更新 API は status transition を明示する
 - export regenerate は fact write API を兼ねない
 - workspace root は session-scoped attachment から解決する
+- session-only inference を hidden write として扱わない
 
 ## Validation Layer
 
@@ -101,6 +103,7 @@ AI 応答は streaming してよいが、patch proposal は最終確定ブロッ
 - chat response の副作用として patch を自動 apply する
 - approval endpoint が raw file path を自由入力で受ける
 - history append を失敗しても成功扱いにする
+- 1 API call で複数 semantic change を不可分に apply する
 
 ## Open Questions
 

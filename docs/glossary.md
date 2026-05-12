@@ -23,6 +23,7 @@ CareerNess における user-owned local workspace。facts、profiles、exports�
 ## Patch
 
 AI が提案する変更差分。CareerNess では直接上書きよりも patch proposal を基本とする。
+原則として 1 patch = 1 semantic change とする。
 
 ## Capability
 
@@ -46,7 +47,7 @@ AI が attach された workspace の中だけを対象に動作するという�
 
 ## Role
 
-プロジェクトや時期において担っていた責務の型。肩書きだけでなく、実際の役割を説明するための概念。
+プロジェクトや時期において担っていた責務の型。肩書きだけでなく、実際の役割を説明するための概念。ただし truth の中心ではなく、facts から整理される derived metadata に近い。
 
 ## Tag
 

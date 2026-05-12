@@ -20,8 +20,18 @@ CareerNess における中心的な security 課題は、「AI がどこまで�
 - AI の更新は patch proposal を基本にする
 - facts への確定反映には user approval を要求する
 - AppServer は unrestricted shell/file capability を前提にしない
+- MVP では attach workspace 外 capability を追加しない
 
 Security 上、これは単なる UX 制約ではない。能力境界が曖昧だと、ユーザーは AI に何を渡したのかを理解できなくなる。
+
+MVP で明示的に scope 外とするもの:
+
+- clipboard
+- browser history
+- screenshot capture
+- arbitrary local files
+- global desktop search
+- background collection of unrelated files
 
 ## Local-first
 
@@ -43,6 +53,7 @@ CareerNess は、ユーザーのキャリア情報を運営側が所有・常時
 - facts / profiles / exports の正本は workspace にある
 - cloud-side retention は最小限に抑える
 - ユーザーは自分のファイルを直接確認・バックアップできる
+- login や cloud session は workspace ownership を移さない
 
 ## Workspace Attachment
 
@@ -72,6 +83,7 @@ CareerNess では、AI にローカルファイル全域への unrestricted acce
 - AI が hallucinated fact を正本へ混入すること
 - Cloud に意図せず career data が残り続けること
 - export が唯一の正本になって修正不能になること
+- session memory が hidden database 化すること
 
 ## Security Responsibilities
 
@@ -86,11 +98,13 @@ CareerNess では、AI にローカルファイル全域への unrestricted acce
 - capability boundary を壊さない
 - 最小限のセッション情報だけを扱う
 - ユーザーデータ retention を拡大しない
+- patch proposal を truth そのものとして保存し続けない
 
 ### Workspace
 
 - 正本と派生物を分離する
 - 人間が直接監査できる形式で持つ
+- proposed / pending / confirmed の状態を session 外でも表現できる
 
 ## 非目標
 

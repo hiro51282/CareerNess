@@ -9,6 +9,7 @@ CareerNess の中心は「構造化されたキャリア情報」である。こ
 - Export は外部提出用の派生物である
 - Project、Tag、Role は Fact と Profile を支える補助概念である
 - AI は Fact を発明してはならない
+- role/title は truth の中心ではなく derived metadata に近い
 
 ## Fact
 
@@ -19,7 +20,7 @@ Fact は、ユーザーのキャリアに関する確認可能な事実を保持
 対象例:
 
 - いつ、どこで、何をしていたか
-- どの role を担っていたか
+- どんな責務や判断を担っていたか
 - どの技術や業務に関与したか
 - どの成果や改善を出したか
 - 何が未確認で、何が確認済みか
@@ -38,11 +39,12 @@ Fact は、最終文章として美しくある必要はない。重要なのは
 ```md
 project: payment-platform-refresh
 period: 2022-04 to 2023-01
-role: tech-lead
+role_hints:
+  - tech-lead
 facts:
   - Go への一部移行方針を技術選定した
   - CI 実行時間を短縮するために workflow を整理した
-  - 3 team 間の調整役を担った
+  - 3 team 間の調整を主導した
 status: confirmed
 ```
 
@@ -155,12 +157,13 @@ Tag は、facts や projects を横断して整理するための分類ラベル
 
 ### Responsibility
 
-Role は、その時期や project において担っていた責務の型を表す。職種名そのものだけでなく、実際に果たした役割を説明するために使う。
+Role は、その時期や project において担っていた責務の型を表す。職種名そのものだけでなく、実際に果たした役割を説明するために使う。ただし Role 自体が primary truth ではなく、facts の action / decision / impact / context から整理・導出される補助概念に近い。
 
 ### Must Not
 
 - 肩書きだけで実態を置き換えない
 - project context を無視して固定ラベル化しすぎない
+- title と role を confirmed fact の代替にしない
 
 ### Example
 
@@ -177,7 +180,7 @@ responsibilities:
 この 3 つを分離する理由は、キャリア情報の再利用性を守るためである。
 
 - Fact に戻れれば、見せ方を何度でも変えられる
-- Profile を分ければ、role ごとの差分を自然に管理できる
+- Profile を分ければ、derived role ごとの差分を自然に管理できる
 - Export を分ければ、提出形式の都合で正本が汚れない
 
 逆にこの分離がないと、毎回文章を修正する運用になり、どれが最新でどれが正本なのかが曖昧になる。

@@ -40,6 +40,7 @@ CareerNess では、責務と能力境界を文書として固定することを
 - Browser と Workspace の仲介
 - workspace-scoped capability の適用
 - patch proposal の生成補助
+- local apply request の調停
 
 ### やらないこと
 
@@ -47,6 +48,7 @@ CareerNess では、責務と能力境界を文書として固定することを
 - unrestricted file access の提供
 - unrestricted shell access の提供
 - ユーザー承認を飛ばした自動確定
+- workspace owner の代行
 
 ### 保持するもの
 
@@ -59,6 +61,7 @@ CareerNess では、責務と能力境界を文書として固定することを
 - CareerVault 全体の永続コピー
 - profile/export の恒久保存
 - attach されていない workspace の内容
+- session のみを根拠にした hidden truth
 
 ## Workspace
 
@@ -71,6 +74,7 @@ Workspace は CareerVault を指す。CareerNess におけるキャリア情報�
 - exports を提出・共有用出力として保持する
 - projects / tags / role などの補助情報を保持する
 - AI が触れてよい範囲を明示する
+- proposed / pending / confirmed の状態を保持する
 
 ### やらないこと
 

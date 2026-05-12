@@ -45,6 +45,7 @@ AI-assisted session starts
 - attach しても workspace の owner はユーザーのまま
 - AppServer セッション終了後、workspace ownership は何も移らない
 - OpenAI 利用条件はユーザー側アカウント状態に依存する
+- login は AI access / AppServer session / usage control のためであり、workspace ownership を作らない
 
 ## Session Binding
 
@@ -54,6 +55,7 @@ AI-assisted session starts
 - workspace attachment
 
 この分離により、同一ログイン中でも workspace を切り替えたり、attach を解除したりできる。
+同時に、`login = workspace owner` という誤読も避けられる。
 
 ## Minimal Retention
 
@@ -81,6 +83,7 @@ AppServer 側で保持する情報は最小限にとどめる。
 - ログイン直後に過去 workspace を自動再接続する
 - サーバー側で workspace 内容をキャッシュ正本化する
 - auth 成功を理由に approval を省略する
+- login 情報だけで local apply を許可する
 
 ## Open Questions
 

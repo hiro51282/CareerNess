@@ -26,6 +26,7 @@ CareerNess では session を一つに潰さない。少なくとも user sessio
 - 同じ workspace で複数会話はありうる
 - 会話が続いていても patch review を一時中断したい
 - approval 後 apply 前に再 validation が必要な場合がある
+- session が truth source ではないため、正本更新の境界を分ける必要がある
 
 ## Minimal State
 
@@ -47,6 +48,7 @@ CareerNess では session を一つに潰さない。少なくとも user sessio
 - conversation id
 - selected task mode
 - referenced workspace slices
+- ephemeral inference / question context
 
 ### Patch Review Session
 
@@ -91,11 +93,28 @@ patch proposal 作成後に workspace が変わった場合、apply 前に stale
 
 stale の場合は silent rebase ではなく、再 validation または再承認を促す。
 
+## Session Is Not Truth
+
+conversation や review session は揮発的な作業文脈である。次のような情報を session のみに閉じ込めない。
+
+- inferred facts
+- user corrections
+- pending disagreements
+- tentative labels
+
+これらが将来の判断に影響するなら、workspace 側に明示状態で残す。
+
+- `proposed`
+- `pending`
+- `confirmed`
+- `rejected`
+
 ## Prohibited Patterns
 
 - conversation id だけで apply を許可する
 - stale patch を自動書き換えして apply する
 - expired attachment でも workspace read を継続する
+- session resume 情報を canonical memory とみなす
 
 ## Open Questions
 

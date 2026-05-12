@@ -19,6 +19,7 @@ CareerNess の patch proposal は、AI が workspace を直接編集しないた
 ## Format Principles
 
 - patch は machine-readable かつ human-readable である
+- patch 1 つは 1 semantic change を表す
 - patch 本体と patch summary を分ける
 - file overwrite ではなく operation の列として表現する
 - facts 変更では rationale と confidence を必須に近く扱う
@@ -107,6 +108,17 @@ MVP では operation 種別を絞る。
 
 `delete_file` は高リスクなので、MVP では UI 上で明示確認を必須にする。AI が自動適用してよい前提にはしない。
 
+## Semantic Change Rule
+
+1 patch = 1 semantic change を原則とする。
+
+- fact 追加
+- fact status 更新
+- profile draft 再生成
+- export draft 再生成
+
+は別 patch として review できる方がよい。1 patch に複数 semantic change を詰め込むと、approval の意味が薄くなる。
+
 ## Fact Patch Rules
 
 fact patch は特に保守的に扱う。
@@ -145,6 +157,7 @@ approval 画面に出す前に、AppServer または local workspace 側で最�
 - export 更新を根拠に fact を暗黙更新する
 - patch 外での silent file mutation
 - workspace 外パスを target に含める
+- fact 追加と export 再生成を一体の不可分 patch にする
 
 ## Open Questions
 
