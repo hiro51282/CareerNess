@@ -1,0 +1,9 @@
+{
+  "name": "careerness",
+  "private": true,
+  "scripts": {
+    "dev:web": "pnpm --filter web dev",
+    "build:web": "pnpm --filter web build",
+    "dev:api": "cd apps/api && go run ./cmd/server"
+  }
+}

@@ -1,0 +1,9 @@
+project_id: sample-payment-platform
+period: "2022-04 to 2023-01"
+role_hints:
+  - tech-lead
+facts:
+  - Go への一部移行方針を技術選定した
+  - CI 実行時間を短縮するために workflow を整理した
+  - 3 チーム間の調整を主導した
+status: confirmed

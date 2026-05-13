@@ -1,8 +1,27 @@
-# codex-workbench-main ディレクトリ自体は無視せず、その「中身」をすべて無視する
-codex-workbench-main/*
+# Node.js / pnpm
+node_modules/
+dist/
+.pnpm/
+pnpm-lock.yaml
 
-# docs フォルダだけは無視しない（例外設定）
-!codex-workbench-main/docs/
-!codex-workbench-main/implementation
+# Build outputs
+*.o
+*.a
+*.so
+*.dylib
+
+# Development
+.env.local
+.env.*.local
+*.log
+.DS_Store
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Temporary
 tmp/*
 !tmp/.gitkeep
+*.tmp

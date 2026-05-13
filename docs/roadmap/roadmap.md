@@ -2,7 +2,37 @@
 
 CareerNess の roadmap は、MVP を中心に段階的に考える。最初から理想形を作るのではなく、設計思想を壊さずに最小限の流れを成立させることを優先する。
 
-## Phase 0: Concept Fixing
+---
+
+## 現状 (2026-05-14)
+
+**Phase 0 完了、Phase 1 進行中。**
+
+実装済み：
+- モノレポ構成（pnpm workspaces + Go + React/Vite）
+- Go API サーバー（`:8080`）
+  - `POST /api/v1/conversations/message` — patch proposal 生成（mock AI）
+  - `POST /api/v1/patches/validate` — patch バリデーション
+- React Web アプリ（`:5173`）
+  - ワークスペース attach（File System Access API）
+  - サイドバー — attach 済みワークスペースのファイル一覧
+  - チャット UI
+  - パッチレビュー画面（diff 表示・承認・却下）
+  - 承認後の YAML 書き込み（`facts/inbox.yaml`）
+- patch モデル（`patch_id`、`operations`、`status`、`rationale`、`confidence`）
+- patch バリデーション（パストラバーサル検出、operation タイプ制限）
+- サンプルワークスペース（`implementation/examples/careervault/`）
+
+未着手（Phase 1 残り）：
+- AI の実統合（現在は mock）
+- fact 整形 UI（inbox の raw_text を構造化する）
+- profile 生成
+- export
+- 認証
+
+---
+
+## Phase 0: Concept Fixing ✅
 
 目的:
 
@@ -13,16 +43,19 @@ CareerNess の roadmap は、MVP を中心に段階的に考える。最初か�
 
 この phase では、実装よりも設計固定を優先する。
 
-## Phase 1: MVP Workspace Flow
+## Phase 1: MVP Workspace Flow 🔨 進行中
 
 目的:
 
-- login
-- workspace attach
-- chat
-- fact extraction
-- profile generation
+- ~~workspace attach~~ ✅
+- ~~chat~~ ✅
+- ~~patch proposal / review~~ ✅
+- ~~YAML apply~~ ✅
+- fact 整形（inbox → 構造化 fact）
+- AI 実統合
+- profile 生成
 - export
+- login
 
 この phase で成立すべきこと:
 
