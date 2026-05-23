@@ -1,0 +1,121 @@
+# CareerVault Example: Achievements
+# 成果、改善、学習
+
+- fact_id: fact-ach-latency-improvement
+  type: achievement
+  status: confirmed
+  summary: Payment latency を 30% 削減（200ms → 140ms）
+  description: |
+    Payment service アーキテクチャを Python から Go へ再設計。
+    Profiling を通じた hot path 最適化、gRPC 導入、
+    接続プーリング実装により p99 latency を 200ms から 140ms に削減。
+
+    具体的な改善：
+    - Database connection pooling（同時接続数の効率化）
+    - gRPC 導入による inter-service latency 削減
+    - キャッシング層の導入（idempotent operation）
+    - Memory profiling による allocation 削減
+
+    ユーザー体験への影響：
+    - 決済確認時間が高速化
+    - Customer satisfaction スコア向上
+  confidence: high
+  source: conversation
+  created_at: 2026-05-23T10:30:00Z
+  updated_at: 2026-05-23T12:00:00Z
+  tags:
+    - performance
+    - backend
+    - impact-metrics
+  impact:
+    latency_improvement_pct: 30
+    user_experience: 決済確認が高速化
+    measurement_method: Datadog p99 latency tracking
+  related_experience: fact-proj-payment-platform
+  verification:
+    method: production_metrics
+    data_source: Datadog monitoring
+    confirmed_by: team lead + SRE review
+
+- fact_id: fact-ach-ci-optimization
+  type: achievement
+  status: confirmed
+  summary: CI パイプライン最適化（45 分 → 12 分）
+  description: |
+    CI/CD workflow を再設計・統合。
+    15 個の独立した job を 5 つの並列 stage に統合し、
+    実行時間を 45 分から 12 分に削減（73% 改善）。
+
+    実施内容：
+    - Job 依存関係の分析と再構成
+    - Caching 戦略の導入（依存関係 cache、build artifact cache）
+    - Parallel execution の最適化
+    - Flaky test の修正（安定性向上）
+
+    運用上の効果：
+    - Developer feedback loop が高速化
+    - Release frequency が向上（1 日複数回可能に）
+    - CI リソースコスト削減
+  confidence: high
+  source: conversation
+  created_at: 2026-05-23T10:45:00Z
+  updated_at: 2026-05-23T12:30:00Z
+  tags:
+    - ci-cd
+    - platform
+    - productivity
+  impact:
+    ci_time_reduction_pct: 73
+    developer_experience: Faster feedback loop
+  related_experience: fact-proj-payment-platform
+
+- fact_id: fact-ach-team-coordination
+  type: achievement
+  status: proposed
+  summary: 3 チーム統合に向けた統一 API spec 策定
+  description: |
+    決済、platform、infra チームの技術的議論をリード。
+    統一された API contract を定義し、service 間の統合を加速。
+
+    実施プロセス：
+    - 各チームの要件・制約の分析
+    - API 設計ワークショップの開催
+    - Protocol buffers / gRPC spec の定義
+    - Testing strategy の統一
+  confidence: medium
+  source: conversation
+  created_at: 2026-05-23T10:50:00Z
+  tags:
+    - leadership
+    - cross-team
+    - architecture
+  related_experience: fact-proj-payment-platform
+  source_detail: |
+    User が概要を述べたが、実装詳細は未確認。
+    フォローアップが必要：
+    - API spec の具体的なスコープ
+    - Implementation の成功指標
+
+- fact_id: fact-ach-mentoring
+  type: achievement
+  status: confirmed
+  summary: Junior engineer を 3 人メンタリング（Concurrency patterns）
+  description: |
+    Go concurrency patterns（goroutine、channel、context）について
+    3 人の junior engineer をメンタリング。
+    ペアプログラミング、code review、discussion を通じて
+    Go systems programming の foundation を構築。
+
+    効果：
+    - Junior engineer が本番レベルの Go code を書けるように
+    - Payment service の知識が team に分散
+    - Knowledge base（internal wiki）が整備
+  confidence: high
+  source: manual
+  created_at: 2026-05-23T11:00:00Z
+  tags:
+    - leadership
+    - mentoring
+    - knowledge-sharing
+  impact:
+    team_capability_improvement: "Junior engineer が本番対応可能に"

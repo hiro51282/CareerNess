@@ -1,0 +1,137 @@
+# CareerVault Example: Skills
+# 技術、スキル、能力
+
+- fact_id: fact-skill-go
+  type: skill
+  status: confirmed
+  summary: Go（systems・backend programming）
+  description: |
+    本番環境での 10 年以上の経験。
+    High-performance backend systems、microservices、gRPC に特化。
+    Concurrency patterns（goroutine、channel、context）、
+    memory optimization、performance profiling が専門。
+
+    経験レベル：
+    - 単純なスクリプトから複雑な distributed systems まで設計・実装
+    - Concurrency bugs のデバッグ・回避パターンの理解
+    - Performance profiling / optimization の実績
+
+    メンタリング実績：
+    - 3 人の junior engineer に concurrency patterns を指導
+    - 社内 Go best practice の文書化に貢献
+  confidence: high
+  source: manual
+  created_at: 2026-05-20T00:00:00Z
+  updated_at: 2026-05-23T14:00:00Z
+  tags:
+    - language
+    - backend
+    - systems-programming
+  proficiency: advanced
+  used_in_projects:
+    - fact-proj-payment-platform
+    - fact-proj-internal-tools
+    - fact-proj-infra-optimization
+  sub_skills:
+    - Goroutines and channels
+    - Context usage and cancellation
+    - Memory profiling and optimization
+    - gRPC protocol implementation
+    - Testing（unit、integration、benchmark）
+    - Database connection pooling
+
+- fact_id: fact-skill-microservices
+  type: skill
+  status: confirmed
+  summary: マイクロサービス・分散システム設計
+  description: |
+    Service boundary の定義、inter-service communication、
+    consistency patterns（eventual consistency、distributed transactions）の実装経験。
+
+    経験：
+    - Payment platform における service decomposition
+    - gRPC / Kafka を通じた async communication
+    - Service mesh / load balancing
+    - Observability / monitoring 設計
+  confidence: high
+  source: manual
+  created_at: 2026-05-20T00:00:00Z
+  tags:
+    - architecture
+    - backend
+  proficiency: advanced
+  used_in_projects:
+    - fact-proj-payment-platform
+
+- fact_id: fact-skill-ci-cd
+  type: skill
+  status: confirmed
+  summary: CI/CD パイプライン設計・最適化
+  description: |
+    GitHub Actions、GitLab CI などを用いた CI/CD パイプラインの設計・実装・最適化。
+
+    実績：
+    - 45 分 → 12 分への CI 時間削減（73%）
+    - Caching 戦略の実装
+    - Parallel job execution の最適化
+    - Flaky test の改善
+  confidence: high
+  source: manual
+  created_at: 2026-05-20T00:00:00Z
+  tags:
+    - platform
+    - ci-cd
+    - devops
+  proficiency: advanced
+  used_in_projects:
+    - fact-proj-payment-platform
+
+- fact_id: fact-skill-leadership
+  type: skill
+  status: confirmed
+  summary: 技術リーダーシップ・cross-team 調整
+  description: |
+    アーキテクチャ意思決定、技術選定、cross-team 議論のリード。
+    複数チーム（3～8 人）の調整経験。
+
+    スタイル：
+    - 技術的議論を丁寧に進める（全員の理解を優先）
+    - Data-driven decision making（metrics、profiling data を根拠に）
+    - Blameless culture（事後検討、改善志向）
+
+    実績：
+    - Payment platform における Go 導入の意思決定・推進
+    - 3 チーム統一 API spec 策定のリード
+    - Junior engineer メンタリング
+  confidence: high
+  source: manual
+  created_at: 2026-05-20T00:00:00Z
+  tags:
+    - soft-skill
+    - leadership
+  proficiency: advanced
+
+- fact_id: fact-skill-performance-optimization
+  type: skill
+  status: confirmed
+  summary: パフォーマンス最適化・プロファイリング
+  description: |
+    CPU profiling、memory profiling、network profiling を通じた
+    システムレベルの最適化実績。
+
+    具体的な技術：
+    - Go pprof、Datadog profiling
+    - Distributed tracing（latency 分析）
+    - Resource utilization 最適化
+    - Caching 戦略の設計
+
+    成果：
+    - Payment latency 30% 削減
+    - CI 実行時間 73% 削減
+  confidence: high
+  source: manual
+  created_at: 2026-05-20T00:00:00Z
+  tags:
+    - performance
+    - backend
+  proficiency: advanced

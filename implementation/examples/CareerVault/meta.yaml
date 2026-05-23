@@ -1,0 +1,73 @@
+# meta.yaml
+# Workspace メタデータ、スキーマ version、状態
+
+workspace:
+  id: local-careervault
+  name: Example User's CareerVault
+  created_at: 2026-05-20T00:00:00Z
+  last_updated: 2026-05-24T15:30:00Z
+  schema_version: "1.0-mvp"
+  owner: example.user@example.com
+
+current_state:
+  # Fact count
+  total_facts: 10
+  confirmed_facts: 7
+  proposed_facts: 3
+  inferred_facts: 0
+
+  # Breakdown by type
+  fact_types:
+    experience: 3
+    achievement: 4
+    skill: 5
+
+  # Profiles & exports
+  generated_profiles: 1
+  generated_exports: 1
+
+statistics:
+  date_range:
+    earliest_experience: "2020-10"
+    latest_experience: "2023-01"
+    total_career_months: 34  # 2020-10 to 2023-01
+
+  covered_period:
+    start: "2020-10"
+    end: "2023-01"
+
+  technology_diversity:
+    programming_languages: 3  # Go, Python, TypeScript
+    cloud_platforms: 1  # AWS
+    infrastructure: 3  # Docker, K8s, CI/CD
+
+version_history:
+  "1.0-mvp":
+    date: 2026-05-23
+    description: "Extraction + patch review loop 向けの最小限スキーマ"
+    features:
+      - 12 core fields per fact
+      - status lifecycle (confirmed | proposed)
+      - source tracking
+      - confidence levels
+      - closed tag vocabulary
+    breaking_changes: null
+
+workflow_state:
+  last_patch_applied: null  # まだ patch 未適用
+  pending_reviews: 3  # proposed_facts の count
+  review_recommendations:
+    - fact_id: fact-proj-internal-tools
+      reason: "Team size・adoption metrics を確認すべき"
+      priority: medium
+    - fact_id: fact-ach-team-coordination
+      reason: "API spec の実装成果を詳細化したい"
+      priority: medium
+    - fact_id: fact-proj-infra-optimization
+      reason: "Zero-downtime deployment の効果を定量化したい"
+      priority: low
+
+next_actions:
+  - Review proposed facts (3 items)
+  - Regenerate platform-engineer profile once proposed facts are confirmed
+  - Create export for English resume

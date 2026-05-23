@@ -16,6 +16,8 @@ func main() {
 	})
 	mux.HandleFunc("/api/v1/conversations/message", handler.PostMessage)
 	mux.HandleFunc("/api/v1/patches/validate", handler.PostValidatePatch)
+	mux.HandleFunc("/api/v1/extract", handler.PostExtract)
+	mux.HandleFunc("/api/v1/apply-patch", handler.PostApplyPatch)
 
 	srv := &http.Server{
 		Addr:    ":8080",

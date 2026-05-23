@@ -1,0 +1,89 @@
+# tags.yaml
+# Tag 語彙（クローズドリスト、AI は新規 tag を作らない）
+
+tags:
+  # 技術ドメイン
+  backend:
+    description: バックエンド、API、server-side logic
+    category: technology_domain
+
+  frontend:
+    description: フロントエンド、UI、web client
+    category: technology_domain
+
+  platform:
+    description: インフラ、DevOps、platform engineering
+    category: technology_domain
+
+  # 能力・役割
+  leadership:
+    description: チームリーダーシップ、意思決定、guidance
+    category: capability
+
+  architecture:
+    description: システム設計、アーキテクチャ、design decisions
+    category: capability
+
+  mentoring:
+    description: Junior engineer 指導、knowledge transfer
+    category: capability
+
+  performance:
+    description: パフォーマンス最適化、profiling、tuning
+    category: capability
+
+  # スキル種別
+  language:
+    description: プログラミング言語
+    category: skill_type
+
+  framework:
+    description: フレームワーク、ライブラリ
+    category: skill_type
+
+  ci-cd:
+    description: CI/CD パイプライン、build automation
+    category: skill_type
+
+  infrastructure:
+    description: インフラ、Kubernetes、Docker、cloud
+    category: skill_type
+
+  # ビジネスインパクト
+  impact-metrics:
+    description: 定量的な成果、metrics、KPI 改善
+    category: business_impact
+
+  cost-reduction:
+    description: コスト・リソース効率化
+    category: business_impact
+
+  productivity:
+    description: 生産性向上、developer experience 改善
+    category: business_impact
+
+  revenue:
+    description: 売上・ビジネス直結のインパクト
+    category: business_impact
+
+  # クロスカッティング
+  systems-programming:
+    description: Low-level systems、performance-critical code
+    category: specialization
+
+  cross-team:
+    description: 複数チーム間調整、collaboration
+    category: specialization
+
+  knowledge-sharing:
+    description: Documentation、internal wiki、training
+    category: specialization
+
+  soft-skill:
+    description: コミュニケーション、leadership、facilitation
+    category: capability
+
+# Tag usage examples:
+# - fact-skill-go: [language, backend, systems-programming]
+# - fact-proj-payment-platform: [backend, platform, architecture, leadership]
+# - fact-ach-latency-improvement: [performance, backend, impact-metrics]

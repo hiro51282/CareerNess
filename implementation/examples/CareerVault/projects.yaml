@@ -1,0 +1,43 @@
+# projects.yaml
+# プロジェクト・メタデータ（オプショナル）
+
+projects:
+  - id: proj-payment-platform
+    company: 株式会社 Example
+    title: Payment Platform 刷新
+    description: Python から Go への migration、latency・コスト最適化
+    period: "2022-04 to 2023-01"
+    duration_months: 10
+    team_size: 8
+    team_composition: "Backend 5、Frontend 2、Infra 1"
+    linked_experiences:
+      - fact-proj-payment-platform
+    linked_achievements:
+      - fact-ach-latency-improvement
+      - fact-ach-ci-optimization
+      - fact-ach-team-coordination
+    domain: Payment / Financial services
+    scale: Production system、millions of transactions per day
+
+  - id: proj-internal-tools
+    company: 株式会社 Example
+    title: 内部ツール CLI Framework
+    description: 5 チーム向けの開発環境・デプロイメント自動化 framework
+    period: "2021-06 to 2022-03"
+    duration_months: 9
+    team_size: 1
+    linked_experiences:
+      - fact-proj-internal-tools
+    domain: Developer Tools / Infrastructure
+    scale: Used by 5 teams、18 months operational
+
+  - id: proj-infra-optimization
+    company: 株式会社 Example
+    title: インフラ最適化・Kubernetes 移行
+    description: On-prem → AWS EKS 段階的移行、zero-downtime deployment 実現
+    period: "2020-10 to 2021-05"
+    duration_months: 7
+    linked_experiences:
+      - fact-proj-infra-optimization
+    domain: Infrastructure / DevOps
+    scale: Company-wide infrastructure platform

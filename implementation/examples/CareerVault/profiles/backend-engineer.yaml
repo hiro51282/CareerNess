@@ -1,0 +1,66 @@
+# Profile: Backend Engineer
+# AI が確認済み fact から自動生成
+
+id: backend-engineer
+target_role: バックエンドエンジニア
+created_at: 2026-05-24T15:00:00Z
+generated_by: AI extraction agent
+source_facts:
+  - fact-proj-payment-platform (confirmed)
+  - fact-ach-latency-improvement (confirmed)
+  - fact-ach-ci-optimization (confirmed)
+  - fact-skill-go (confirmed)
+  - fact-skill-microservices (confirmed)
+  - fact-skill-performance-optimization (confirmed)
+  - fact-proj-internal-tools (proposed ※ review 対象)
+  - fact-skill-ci-cd (confirmed)
+
+narrative: |
+  本番環境での 10 年以上の経験を持つシニアバックエンドエンジニア。
+  High-performance distributed systems の設計・実装、
+  パフォーマンス最適化、技術選定が専門。
+
+  最近の実績として、Payment platform の大規模刷新をリード。
+  Python から Go への移行により、latency を 30% 削減、
+  CI 実行時間を 73% 削減を実現。
+  3 チーム間の調整を通じて、統一 API spec を策定し、
+  service 間の統合を加速。
+
+  Concurrency patterns、distributed systems design、
+  パフォーマンス profiling に深い専門知識を持つ。
+  Junior engineer へのメンタリング経験も豊富。
+
+key_strengths:
+  - Go での high-performance systems 実装
+  - Microservices architecture 設計・最適化
+  - パフォーマンス profiling・bottleneck 分析
+  - Cross-team technical leadership
+  - CI/CD パイプライン設計・最適化
+
+highlighted_achievements:
+  - Payment latency 30% 削減（200ms → 140ms p99）
+  - CI 実行時間 73% 削減（45 分 → 12 分）
+  - 3 チーム統一 API spec 策定
+  - Junior engineer メンタリング（3 人）
+
+technical_specialization:
+  primary_language: Go
+  domains:
+    - Microservices
+    - Payment systems
+    - Infrastructure optimization
+  expertise_level: Advanced / Tech Lead
+
+roles_suitable_for:
+  - Senior Backend Engineer
+  - Tech Lead / Architect
+  - Platform Engineer
+  - Site Reliability Engineer (SRE)
+
+notes: |
+  Note: 一部の fact は proposed status であり、
+  profile には confirmed fact のみを使用しました。
+
+  追加される可能性のある経験：
+  - fact-proj-internal-tools（5 チームで 18 ヶ月使用）
+  - fact-proj-infra-optimization（K8s 移行実績）
