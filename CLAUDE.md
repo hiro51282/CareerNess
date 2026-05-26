@@ -7,7 +7,7 @@
 | 領域 | 技術 |
 |---|---|
 | フロントエンド | React + TypeScript + Vite（Next.js ではない） |
-| バックエンド | Go 1.22（workspace runtime として扱う） |
+| バックエンド | Go 1.23.4（workspace runtime として扱う） |
 | モノレポ | pnpm workspaces（Turborepo/Nx は使わない） |
 | ワークスペース読み書き | File System Access API（ブラウザ側、Chrome/Edge のみ） |
 | データ形式 | YAML |
