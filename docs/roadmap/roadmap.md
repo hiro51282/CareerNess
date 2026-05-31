@@ -4,7 +4,7 @@ CareerNess の roadmap は、MVP を中心に段階的に考える。最初か�
 
 ---
 
-## 現状 (2026-05-14)
+## 現状 (2026-05-31)
 
 **Phase 0 完了、Phase 1 進行中。**
 
@@ -13,6 +13,8 @@ CareerNess の roadmap は、MVP を中心に段階的に考える。最初か�
 - Go API サーバー（`:8080`）
   - `POST /api/v1/conversations/message` — patch proposal 生成（mock AI）
   - `POST /api/v1/patches/validate` — patch バリデーション
+  - `POST /api/v1/extract` — extraction pipeline（mock provider）
+  - `POST /api/v1/apply-patch` — patch apply（workspace への YAML 書き込み）
 - React Web アプリ（`:5173`）
   - ワークスペース attach（File System Access API）
   - サイドバー — attach 済みワークスペースのファイル一覧
@@ -24,11 +26,13 @@ CareerNess の roadmap は、MVP を中心に段階的に考える。最初か�
 - サンプルワークスペース（`implementation/examples/careervault/`）
 
 未着手（Phase 1 残り）：
-- AI の実統合（現在は mock）
+- AI の実統合（OpenAI Codex 経由。ADR-004 で確定）
+- fact schema minimal fix（`action / decision / impact` を空フィールドとして追加。Phase 2 マイグレーション回避のため）
 - fact 整形 UI（inbox の raw_text を構造化する）
 - profile 生成
 - export
-- 認証
+- 認証（JWT + workspace isolation + ログイン画面）
+- E2E 統合テスト（extract → patch → apply の full loop）
 
 ---
 
@@ -51,11 +55,13 @@ CareerNess の roadmap は、MVP を中心に段階的に考える。最初か�
 - ~~chat~~ ✅
 - ~~patch proposal / review~~ ✅
 - ~~YAML apply~~ ✅
+- fact schema minimal fix（`action / decision / impact` を空フィールドとして追加）
+- AI 実統合（OpenAI Codex 経由。ADR-004）
 - fact 整形（inbox → 構造化 fact）
-- AI 実統合
 - profile 生成
 - export
-- login
+- 認証（JWT + per-user workspace isolation）
+- E2E 統合テスト
 
 この phase で成立すべきこと:
 
@@ -63,6 +69,19 @@ CareerNess の roadmap は、MVP を中心に段階的に考える。最初か�
 - facts を review しながら保存できる
 - profile を facts から生成できる
 - export を派生物として扱える
+- ユーザー認証済みセッションのみが API を操作できる
+- session scope 外の workspace_path への apply-patch が拒否される
+
+## Phase 1.5: packages 分離スプリント（Phase 1 完了後・Phase 2 着手前）
+
+目的:
+
+- `packages/schema` — YAMLFact / Patch 型を一元化（二重定義解消）
+- `packages/patch-engine` — validator / applier を移行
+- `packages/workspace-core` — file I/O / attach 管理を移行
+- `apps/api` は orchestration + handler のみに絞る
+
+この sprint を入れる理由: Feature A（マルチユーザー）で認証ミドルウェアと workspace isolation を追加する際、現在の mixed 構造では変更影響範囲が不明確になるため。
 
 ## Phase 2: Better Structure and Review
 
@@ -104,3 +123,8 @@ CareerNess の roadmap は、MVP を中心に段階的に考える。最初か�
 - GPU hosting
 - huge cloud storage
 - 大規模 infra 最適化
+
+## スコープ外と確定したもの（ADR）
+
+- **Git-backed sync**（ADR-005）: Local-first と緊張関係にあるため CareerNESS の提供機能から除外。ユーザーが自身で Git 管理するのは妨げない
+- **Anthropic Claude API の直接使用**: AI provider は OpenAI Codex 経由（ADR-004）で確定。extraction-specification.md の Anthropic SDK 実装例は誤記

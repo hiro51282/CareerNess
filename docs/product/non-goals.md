@@ -80,3 +80,34 @@ CareerNess は MVP を前提にする。
 - distributed systems 前提の説明
 - 将来の大規模 multi-tenant を仮定した複雑な境界設計
 - 実需要が見えていない機能を先に docs へ固定すること
+
+## Git-backed sync を提供機能としてスコープに含めない（ADR-005）
+
+CareerNess は Git リポジトリ管理・sync 機能を提供しない。
+
+やらないこと:
+
+- CareerVault を Git リポジトリとして管理する機能の提供
+- GitHub / GitLab へのデータ push を CareerNess が仲介すること
+- マルチデバイス同期機能の実装・サポート
+
+理由:
+
+- Git-backed sync は Local-first 原則（ADR-003）と緊張関係にある
+- GitHub リモートが "second truth" になりやすく、正本の所在が曖昧になる
+- Git に慣れていないユーザーへの説明コストが大きい
+
+ユーザーが自身の判断で CareerVault を手動 Git 管理・push することは妨げない。
+YAML / markdown ベースの CareerVault は Git と相性がよく、手動管理は技術的に可能。
+
+## AI 利用料金を CareerNess が負担しない
+
+CareerNess 運営は AI 利用料の請求主体にならない。
+
+やらないこと:
+
+- AI 利用のための API キーを運営側で用意・配布すること
+- ユーザーの AI 利用コストを運営側が負担すること
+- AI 利用量を運営視点で制限・管理すること（AppServer abuse 防止のための rate limit は除く）
+
+AI 機能はユーザー自身の OpenAI アカウント（Codex 経由）を利用する（ADR-004）。
