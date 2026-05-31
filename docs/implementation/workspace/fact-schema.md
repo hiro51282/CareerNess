@@ -131,7 +131,25 @@ evidence を厳格な監査証跡にしすぎる必要はないが、少なく�
 - confirmed fact に AI 推測を混ぜる
 - export wording を facts に逆流させる
 
+## Phase 1 での Minimal Fix 方針（2026-05-31 確定）
+
+Reviewer レビュー（e58571e）と Planner 再評価（4d80096）を経て以下を確定した。
+
+**Phase 1 完了時点で `action / decision / impact` の3フィールドを空で追加する。**
+
+理由: Phase 2 での fact schema 拡張時に、confirmed facts のマイグレーションが必要になることを回避するため。空フィールドの場合は `description` にフォールバック表示する。
+
+```yaml
+# Phase 1 で追加する最小フィールド（値は空でよい）
+action: ""       # 何をしたか（空の場合は description を表示）
+decision: ""     # 何を判断したか
+impact:
+  summary: ""    # 何が変わったか
+```
+
+Phase 2 以降でユーザーがこれらのフィールドを埋めていくことで、structured fact への移行が段階的に進む。Phase 1 で蓄積した `confirmed` facts に対してマイグレーションスクリプトを走らせる必要がなくなる。
+
 ## Open Questions
 
-- `decision` を複数値配列にするか単数フィールドにするか
-- fact file を project 単位にまとめるか 1 fact 1 file にするか
+- `decision` を複数値配列にするか単数フィールドにするか → Phase 2 で確定
+- fact file を project 単位にまとめるか 1 fact 1 file にするか → Phase 2 で確定
