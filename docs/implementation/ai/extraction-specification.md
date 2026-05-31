@@ -1,8 +1,17 @@
 # Fact Extraction Pipeline Specification
 
+> **[訂正 2026-05-31]**  
+> このドキュメントには **設計上の誤記** が含まれている。  
+> - 誤: `github.com/anthropic-ai/sdk-go`（Anthropic SDK）を使った Claude API 直接呼び出し  
+> - 正: ユーザー自身の **OpenAI アカウント（Codex 経由）** を使う（ADR-004 で確定）  
+>
+> 以下の実装例（section 4.2 の `callClaudeAPI`、`claude-opus-4-7` モデル使用等）は
+> **OpenAI SDK を使った実装に差し替える** 必要がある。
+> コード例の他の部分（pipeline 構造、validation、normalization）は引き続き有効。
+
 AI が user との会話からキャリア fact を抽出し、patch proposal を生成するための Go ベースの仕様。
 
-**Philosophy**: Claude API を「structured JSON extraction provider」として扱い、extraction output を Go struct に deserialize → validate → normalize → patch generation する deterministic pipeline。
+**Philosophy**: LLM を「structured JSON extraction provider」として扱い、extraction output を Go struct に deserialize → validate → normalize → patch generation する deterministic pipeline。AI provider は OpenAI Codex（ユーザー自身のアカウント）を使用する（ADR-004）。
 
 ---
 
