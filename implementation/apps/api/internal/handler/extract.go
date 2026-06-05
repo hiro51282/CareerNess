@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"careerness/api/internal/extraction"
+	"careerness/api/internal/patch"
 )
 
 // PostExtract orchestrates fact extraction from conversation.
@@ -42,15 +43,22 @@ func PostExtract(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(result.Patches) == 0 {
+	if len(result.YAMLFacts) == 0 {
 		writeError(w, http.StatusUnprocessableEntity, "conversation から事実を抽出できませんでした")
 		return
 	}
 
+	// patch 生成は patch パッケージの責務（docs/implementation/ai/ai-patch-format.md）。
+	// 1 fact = 1 semantic change として 1 patch proposal を組み立てる。
+	patches := make([]*patch.Patch, 0, len(result.YAMLFacts))
+	for i, fact := range result.YAMLFacts {
+		patches = append(patches, patch.BuildFactUpsert(fact, req.SessionID, i))
+	}
+
 	response := map[string]interface{}{
-		"patches":              result.Patches,
-		"extraction_quality":   result.ExtractionQuality,
-		"yaml_facts":           result.YAMLFacts,
+		"patches":            patches,
+		"extraction_quality": result.ExtractionQuality,
+		"yaml_facts":         result.YAMLFacts,
 	}
 	writeJSON(w, http.StatusOK, response)
 }
