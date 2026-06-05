@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"careerness/api/internal/extraction"
 	patcher "careerness/api/internal/patch"
 )
 
@@ -18,8 +17,8 @@ func PostApplyPatch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		Patch         *extraction.Patch `json:"patch"`
-		WorkspacePath string            `json:"workspace_path"`
+		Patch         *patcher.Patch `json:"patch"`
+		WorkspacePath string         `json:"workspace_path"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, "リクエストの解析に失敗しました")

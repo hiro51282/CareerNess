@@ -3,7 +3,6 @@ package extraction
 import (
 	"context"
 	"fmt"
-	"time"
 )
 
 // ExtractionProvider は会話からの fact 抽出を担当する provider の interface
@@ -31,7 +30,11 @@ func NewExtractionService(provider ExtractionProvider) *ExtractionService {
 }
 
 // ExtractFromConversation orchestrates the complete extraction pipeline
-// workflow: conversation → provider → validation → normalization → patch generation
+// workflow: conversation → provider → validation → normalization
+//
+// patch 生成は本パイプラインの責務ではない。呼び出し側（handler 層）が
+// YAMLFacts を patch.BuildFactUpsert に渡して patch proposal を組み立てる。
+// これにより extraction → patch の import 循環を避ける。
 func (s *ExtractionService) ExtractFromConversation(
 	ctx context.Context,
 	conversation string,
@@ -66,68 +69,11 @@ func (s *ExtractionService) ExtractFromConversation(
 	}
 
 	if len(yamlFacts) == 0 {
-		return nil, err
-	}
-
-	// Step 5: Generate patches (provider-independent)
-	patches, err := generatePatches(yamlFacts, sessionID)
-	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("no facts could be extracted from conversation")
 	}
 
 	return &ExtractionPipelineResult{
 		ExtractionQuality: apiResult.ExtractionQuality,
 		YAMLFacts:         yamlFacts,
-		Patches:           patches,
 	}, nil
-}
-
-// generatePatches creates patch proposals from YAMLFacts
-func generatePatches(facts []*YAMLFact, sessionID string) ([]*Patch, error) {
-	patches := make([]*Patch, 0, len(facts))
-
-	for i, fact := range facts {
-		patch := generatePatchFromFact(fact, sessionID, i)
-		patches = append(patches, patch)
-	}
-
-	return patches, nil
-}
-
-// generatePatchFromFact creates a patch proposal from a YAMLFact
-func generatePatchFromFact(fact *YAMLFact, sessionID string, index int) *Patch {
-	now := time.Now().UTC().Format(time.RFC3339) + "Z"
-	targetFile := fmt.Sprintf("facts/%ss.yaml", fact.Type)
-
-	patchID := fmt.Sprintf("patch-%s-%03d",
-		now[0:10],
-		index+1,
-	)
-
-	patch := &Patch{
-		PatchID:     patchID,
-		Kind:        "fact_upsert",
-		Status:      "proposed",
-		CreatedAt:   now,
-		CreatedBy:   "ai",
-		WorkspaceID: "local-careervault",
-		SessionID:   sessionID,
-		Summary: fmt.Sprintf(
-			"Extracted %s fact: %s\nConfidence: %s. Status: proposed.",
-			fact.Type,
-			fact.Summary,
-			fact.Confidence,
-		),
-		Operations: []Operation{
-			{
-				OpID:    "op-001",
-				Type:    "upsert_fact",
-				Target:  targetFile,
-				FactID:  fact.FactID,
-				NewFact: fact,
-			},
-		},
-	}
-
-	return patch
 }

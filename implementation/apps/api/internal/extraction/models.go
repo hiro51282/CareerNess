@@ -34,11 +34,12 @@ type ExtractionQuality struct {
 	Summary                 string `json:"summary"`
 }
 
-// ExtractionPipelineResult は extraction pipeline の全結果
+// ExtractionPipelineResult は extraction pipeline の全結果。
+// patch 生成は patch パッケージ（patch.BuildFactUpsert）の責務であり、
+// import 循環を避けるため本パッケージは patch を持たない。
 type ExtractionPipelineResult struct {
 	ExtractionQuality ExtractionQuality `json:"extraction_quality"`
 	YAMLFacts         []*YAMLFact       `json:"yaml_facts"`
-	Patches           []*Patch          `json:"patches"`
 }
 
 // YAMLFact は MVP YAML schema に準拠する fact
@@ -59,26 +60,4 @@ type YAMLFact struct {
 	TeamSize     *int                   `yaml:"team_size,omitempty" json:"team_size,omitempty"`
 	Impact       map[string]interface{} `yaml:"impact,omitempty" json:"impact,omitempty"`
 	SourceDetail string                 `yaml:"source_detail" json:"source_detail"`
-}
-
-// Patch は patch proposal
-type Patch struct {
-	PatchID     string      `yaml:"patch_id" json:"patch_id"`
-	Kind        string      `yaml:"kind" json:"kind"` // fact_upsert
-	Status      string      `yaml:"status" json:"status"` // proposed
-	CreatedAt   string      `yaml:"created_at" json:"created_at"`
-	CreatedBy   string      `yaml:"created_by" json:"created_by"` // ai
-	WorkspaceID string      `yaml:"workspace_id" json:"workspace_id"`
-	SessionID   string      `yaml:"session_id" json:"session_id"`
-	Summary     string      `yaml:"summary" json:"summary"`
-	Operations  []Operation `yaml:"operations" json:"operations"`
-}
-
-// Operation は patch 内の 1 つの操作
-type Operation struct {
-	OpID    string    `yaml:"op_id" json:"op_id"`
-	Type    string    `yaml:"type" json:"type"` // upsert_fact
-	Target  string    `yaml:"target" json:"target"` // facts/experiences.yaml
-	FactID  string    `yaml:"fact_id" json:"fact_id"`
-	NewFact *YAMLFact `yaml:"new_fact" json:"new_fact"`
 }
