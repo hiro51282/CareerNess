@@ -10,6 +10,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"careerness/api/internal/extraction"
 	"careerness/api/internal/patch"
 )
 
@@ -28,44 +29,33 @@ type ProposeResult struct {
 }
 
 // Propose はユーザーの発言を受けて patch proposal を生成する。
-// 実 AI が未統合の間は mock として動作する。
+// 実 AI が未統合の間は mock として動作するが、出力は正規の YAMLFact 形に揃える
+// （docs/implementation/workspace/fact-schema.md, ai-patch-format.md）。
+// patch 組み立ては extract 経路と同じ patch.BuildFactUpsert を再利用する。
 func Propose(req *ProposeRequest) *ProposeResult {
-	now := time.Now()
-	patchID := fmt.Sprintf("patch-%s-%s", now.Format("2006-01-02"), shortID())
-	entityID := fmt.Sprintf("fact-%s-%s", slugify(req.Message), shortID())
+	now := time.Now().UTC().Format(time.RFC3339)
 
-	afterContent := map[string]interface{}{
-		"source":       "conversation",
-		"raw_text":     req.Message,
-		"extracted_at": now.Format(time.RFC3339),
-		"status":       "proposed",
+	// 発言から正規 YAMLFact を組み立てる。type の自動分類や action/decision の
+	// 中身埋めは実 AI 統合（Codex）の責務なので、ここでは既定 experience・空のままにする。
+	fact := &extraction.YAMLFact{
+		FactID:      fmt.Sprintf("fact-proj-%s-%s", slugify(req.Message), shortID()),
+		Type:        "experience",
+		Status:      "proposed",
+		Summary:     summarize(req.Message),
+		Description: req.Message,
+		Action:      "", // Phase 1: 空（表示側で description にフォールバック）
+		Decision:    "",
+		Confidence:  "medium",
+		Source:      "conversation",
+		CreatedAt:   now,
+		Company:     "未確認",
+		Tags:        []string{},
 	}
 
-	p := &patch.Patch{
-		PatchID:     patchID,
-		WorkspaceID: req.WorkspaceID,
-		SessionID:   req.SessionID,
-		CreatedAt:   now.Format(time.RFC3339),
-		CreatedBy:   "ai",
-		Kind:        "workspace_patch",
-		Summary:     "会話からキャリア fact 候補を抽出しました",
-		Status:      patch.StatusProposed,
-		Operations: []patch.Operation{
-			{
-				OpID:     "op-001",
-				Type:     patch.OpUpsertFact,
-				Target:   "facts/inbox.yaml",
-				EntityID: entityID,
-				Change: patch.ChangeRecord{
-					Before: nil,
-					After:  afterContent,
-				},
-				Rationale:       "ユーザーの発言から抽出したキャリア情報です。内容を確認してください。",
-				Confidence:      patch.ConfidenceMedium,
-				FactStatusAfter: "proposed",
-				ReviewRequired:  true,
-			},
-		},
+	p := patch.BuildFactUpsert(fact, req.SessionID, 0)
+	// BuildFactUpsert は workspace_id を既定値にするため、リクエスト指定があれば優先する。
+	if req.WorkspaceID != "" {
+		p.WorkspaceID = req.WorkspaceID
 	}
 
 	reply := buildReply(req.Message, len(req.WorkspaceFiles))
@@ -73,12 +63,21 @@ func Propose(req *ProposeRequest) *ProposeResult {
 	return &ProposeResult{Reply: reply, Patch: p}
 }
 
-func buildReply(message string, fileCount int) string {
-	preview := message
-	if utf8.RuneCountInString(message) > 40 {
-		runes := []rune(message)
-		preview = string(runes[:40]) + "…"
+// summarize は発言を fact の summary 用に短く整える。
+func summarize(message string) string {
+	return truncateRunes(strings.TrimSpace(message), 40)
+}
+
+// truncateRunes は文字列を rune 単位で n 文字に切り詰め、超過時は省略記号を付ける。
+func truncateRunes(s string, n int) string {
+	if utf8.RuneCountInString(s) <= n {
+		return s
 	}
+	return string([]rune(s)[:n]) + "…"
+}
+
+func buildReply(message string, fileCount int) string {
+	preview := truncateRunes(message, 40)
 
 	var sb strings.Builder
 	sb.WriteString(fmt.Sprintf("「%s」という発言を受け取りました。\n\n", preview))
