@@ -23,7 +23,7 @@ CareerNess の roadmap は、MVP を中心に段階的に考える。最初か�
   - 承認後の YAML 書き込み（`facts/inbox.yaml`）
 - patch モデル（`patch_id`、`operations`、`status`、`rationale`、`confidence`）
 - patch バリデーション（パストラバーサル検出、operation タイプ制限）
-- サンプルワークスペース（`implementation/examples/careervault/`）
+- サンプルワークスペース（`implementation/examples/CareerVault/`）
 
 未着手（Phase 1 残り）：
 - AI の実統合（OpenAI Codex 経由。ADR-004 で確定）

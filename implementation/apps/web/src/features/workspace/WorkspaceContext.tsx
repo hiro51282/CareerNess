@@ -1,6 +1,6 @@
 import { createContext, useState, useCallback, type ReactNode } from 'react'
 import type { Operation } from '../../types/patch'
-import * as yaml from 'js-yaml'
+import { upsertFactYaml } from './factFile'
 
 export interface WorkspaceContextType {
   dirHandle: FileSystemDirectoryHandle | null
@@ -45,7 +45,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         op.type === 'update_file' ||
         op.type === 'upsert_fact'
       ) {
-        await writeFile(dirHandle, op.target, op.change.after)
+        await writeFile(dirHandle, op.target, op.change.after, op.entity_id)
         applied.push(op.target)
       }
       // delete_file は UI で明示確認を経てから別フローで行う（MVP ではスキップ）
@@ -86,41 +86,41 @@ async function readWorkspaceFiles(
 
 // --- ファイル書き込みヘルパー ---
 
-async function writeFile(root: FileSystemDirectoryHandle, target: string, content: unknown) {
+async function writeFile(
+  root: FileSystemDirectoryHandle,
+  target: string,
+  content: unknown,
+  entityId?: string,
+) {
   const parts = target.split('/')
   const fileName = parts.pop()!
   let dir = root
   for (const part of parts) {
     dir = await dir.getDirectoryHandle(part, { create: true })
   }
-  const fileHandle = await dir.getFileHandle(fileName, { create: true })
-  const writable = await fileHandle.createWritable()
 
   let text: string
   if (typeof content === 'string') {
+    // create_file / update_file: ファイル本文をそのまま書き込む。
     text = content
-  } else {
-    let existing: Record<string, unknown> = {}
+  } else if (content !== null && typeof content === 'object') {
+    // upsert_fact: 正本形（fact 配列）として既存ファイルへ fact を upsert する。
+    const fact = content as Record<string, unknown>
+    const factId = (fact['fact_id'] as string) ?? entityId ?? `fact-${Date.now()}`
+    let existingText = ''
     try {
       const existingFile = await dir.getFileHandle(fileName)
-      const existingContent = await (await existingFile.getFile()).text()
-      existing = (yaml.load(existingContent) as Record<string, unknown>) ?? {}
+      existingText = await (await existingFile.getFile()).text()
     } catch {
-      // ファイルが存在しない場合は空オブジェクト
+      // ファイルが存在しない場合は空文字（新規配列から開始）
     }
-
-    if (typeof content === 'object' && content !== null && 'entity_id' in content) {
-      // upsert: entity_id をキーにしてマージ
-      const entity = content as Record<string, unknown>
-      const id = entity['entity_id'] as string
-      if (!existing['facts']) existing['facts'] = {}
-      ;(existing['facts'] as Record<string, unknown>)[id] = entity
-    } else {
-      existing = { ...existing, ...(content as Record<string, unknown>) }
-    }
-    text = yaml.dump(existing, { lineWidth: 120 })
+    text = upsertFactYaml(existingText, fact, factId)
+  } else {
+    text = ''
   }
 
+  const fileHandle = await dir.getFileHandle(fileName, { create: true })
+  const writable = await fileHandle.createWritable()
   await writable.write(text)
   await writable.close()
 }
