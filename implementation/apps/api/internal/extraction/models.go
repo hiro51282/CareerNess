@@ -51,6 +51,11 @@ type YAMLFact struct {
 	Period       string                 `yaml:"period,omitempty" json:"period,omitempty"` // For experience
 	Company      string                 `yaml:"company,omitempty" json:"company,omitempty"`
 	Description  string                 `yaml:"description" json:"description"`
+	// Phase 1 Minimal Fix（docs/implementation/workspace/fact-schema.md, 2026-05-31 確定）:
+	// action/decision を空で先行追加し、Phase 2 拡張時の confirmed facts マイグレーションを回避する。
+	// 空の場合は表示側で description にフォールバックする（impact.summary は既存の Impact map で表現可能）。
+	Action       string                 `yaml:"action,omitempty" json:"action,omitempty"`     // 何をしたか（空なら description 表示）
+	Decision     string                 `yaml:"decision,omitempty" json:"decision,omitempty"` // 何を判断したか
 	Confidence   string                 `yaml:"confidence" json:"confidence"`
 	Source       string                 `yaml:"source" json:"source"`
 	CreatedAt    string                 `yaml:"created_at" json:"created_at"`
