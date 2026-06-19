@@ -65,20 +65,16 @@ func PostAttach(store *session.Store) http.HandlerFunc {
 	}
 }
 
-const workspaceRootBaseDir = "/workspaces"
-
 // normalizeRoot は workspace_root を絶対化・symlink 解決し、
-// 許可されたベースディレクトリ配下にある実在ディレクトリであることを確認した実パスを返す。
+// 実在するディレクトリであることを確認した実パスを返す。
+//
+// CodeQL Autofix（01c44a8）が追加した固定 allowlist `/workspaces` 配下チェックは
+// ここで意図的に撤回している。CareerNESS は Local-first（ADR-001 / ADR-003）であり、
+// workspace_root は「ユーザーが明示宣言した capability 境界」そのもので、任意の場所に
+// 置かれ得る。固定 allowlist はこの設計を破壊する。書き込み時の root 外封じ込めは
+// 後段の workspace.ResolveWithin（ADR-006）が root 基準で担保する。
+// マルチユーザー/クラウド構成での扱いは Task3（認証）で再訪する。
 func normalizeRoot(root string) (string, error) {
-	baseAbs, err := filepath.Abs(workspaceRootBaseDir)
-	if err != nil {
-		return "", err
-	}
-	baseReal, err := filepath.EvalSymlinks(baseAbs)
-	if err != nil {
-		return "", fmt.Errorf("workspace base directory が不正です")
-	}
-
 	abs, err := filepath.Abs(root)
 	if err != nil {
 		return "", err
@@ -87,15 +83,6 @@ func normalizeRoot(root string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("ディレクトリが存在しません")
 	}
-
-	rel, err := filepath.Rel(baseReal, real)
-	if err != nil {
-		return "", fmt.Errorf("workspace_root の検証に失敗しました")
-	}
-	if rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) || filepath.IsAbs(rel) {
-		return "", fmt.Errorf("workspace_root は許可されたディレクトリ配下のみ指定できます")
-	}
-
 	info, err := os.Stat(real)
 	if err != nil {
 		return "", err
