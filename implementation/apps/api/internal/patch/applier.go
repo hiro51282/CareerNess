@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"careerness/api/internal/extraction"
+	"careerness/api/internal/workspace"
 	"gopkg.in/yaml.v3"
 )
 
@@ -30,6 +31,12 @@ func (a *Applier) ApplyPatch(p *Patch) (*ApplyResult, error) {
 		return nil, fmt.Errorf("nil patch")
 	}
 
+	// 構造検証（patch envelope / op の必須項目 / target のパストラバーサル）を
+	// apply の入口で必ず通す。境界強制の第一段（ADR-006）。
+	if err := Validate(p); err != nil {
+		return nil, fmt.Errorf("invalid patch: %w", err)
+	}
+
 	if p.Status != StatusProposed && p.Status != StatusApproved {
 		return nil, fmt.Errorf("cannot apply patch with status %q (expected proposed or approved)", p.Status)
 	}
@@ -44,7 +51,7 @@ func (a *Applier) ApplyPatch(p *Patch) (*ApplyResult, error) {
 		AppliedCount: 0,
 		FailedOps:    []string{},
 		UpdatedFacts: []*extraction.YAMLFact{},
-		AppliedAt:    time.Now().UTC().Format(time.RFC3339) + "Z",
+		AppliedAt:    time.Now().UTC().Format(time.RFC3339),
 	}
 
 	for i := range p.Operations {
@@ -110,7 +117,11 @@ func (a *Applier) applyUpsertFact(op *Operation, result *ApplyResult) error {
 		return err
 	}
 
-	targetPath := filepath.Join(a.workspacePath, op.Target)
+	// 書き込み先を attach root 配下へ封じ込める（ADR-006）。
+	targetPath, err := workspace.ResolveWithin(a.workspacePath, op.Target)
+	if err != nil {
+		return fmt.Errorf("workspace boundary: %w", err)
+	}
 
 	// Ensure directory exists
 	if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
@@ -176,7 +187,11 @@ func (a *Applier) applyMarkFactStatus(op *Operation, result *ApplyResult) error 
 		return fmt.Errorf("mark_fact_status requires fact_status_after")
 	}
 
-	targetPath := filepath.Join(a.workspacePath, op.Target)
+	// 書き込み先を attach root 配下へ封じ込める（ADR-006）。
+	targetPath, err := workspace.ResolveWithin(a.workspacePath, op.Target)
+	if err != nil {
+		return fmt.Errorf("workspace boundary: %w", err)
+	}
 
 	// Read existing facts
 	content, err := os.ReadFile(targetPath)
@@ -194,7 +209,7 @@ func (a *Applier) applyMarkFactStatus(op *Operation, result *ApplyResult) error 
 	for i, fact := range facts {
 		if fact.FactID == factID {
 			fact.Status = op.FactStatusAfter
-			fact.UpdatedAt = time.Now().UTC().Format(time.RFC3339) + "Z"
+			fact.UpdatedAt = time.Now().UTC().Format(time.RFC3339)
 
 			facts[i] = fact
 			found = true
