@@ -23,7 +23,14 @@ func ResolveWithin(root, target string) (string, error) {
 	if filepath.IsAbs(target) {
 		return "", fmt.Errorf("target は相対パスである必要があります: %q", target)
 	}
-	// 明示的な ".." セグメントは Clean 前に拒否する。
+	// Go 標準の局所性判定で、root を脱出し得る target を早期に弾く。
+	// 絶対パス・空・".." での脱出・（Windows の）予約名を一括で拒否し、
+	// CodeQL go/path-injection も sanitizer として認識できる形にする。
+	if !filepath.IsLocal(target) {
+		return "", fmt.Errorf("target は workspace 内の相対パスである必要があります: %q", target)
+	}
+	// IsLocal は root 内に留まる ".." を許容するが、本実装では曖昧さを避けるため
+	// 明示的な ".." セグメントはより厳格に拒否する（挙動は従来どおり）。
 	if slices.Contains(strings.Split(filepath.ToSlash(target), "/"), "..") {
 		return "", fmt.Errorf("target にパストラバーサルが含まれています: %q", target)
 	}
