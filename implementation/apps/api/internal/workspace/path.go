@@ -41,16 +41,25 @@ func ResolveWithin(root, target string) (string, error) {
 
 	joined := filepath.Join(realRoot, target)
 
-	// 書き込み先ファイルは未存在のことがあるため、存在する祖先まで遡って
-	// symlink を評価し、その実体で封じ込めを判定する。
-	checkPath := resolveExistingAncestor(joined)
+	// 封じ込めを、sink に渡る変数（joined）そのもので字句的に検査する。
+	// ".." セグメントを既に拒否しているため joined は realRoot 配下に収まるが、
+	// この HasPrefix ガードでその不変条件を joined 自身に対して明示する。
+	// これにより静的解析（CodeQL go/path-injection）も joined を sanitize 済みと
+	// 認識できる（変数を跨いだガードでは barrier と見なされないため）。
+	prefix := realRoot + string(filepath.Separator)
+	if joined != realRoot && !strings.HasPrefix(joined, prefix) {
+		return "", fmt.Errorf("target が workspace 外を指しています: %q", target)
+	}
 
+	// symlink 経由の脱出を遮断する: 書き込み先は未存在のことがあるため、
+	// 存在する祖先まで遡って実体解決し、その実体で再封じ込めを判定する。
+	checkPath := resolveExistingAncestor(joined)
 	rel, err := filepath.Rel(realRoot, checkPath)
 	if err != nil {
 		return "", fmt.Errorf("封じ込め判定に失敗: %w", err)
 	}
 	if rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
-		return "", fmt.Errorf("target が workspace 外を指しています: %q", target)
+		return "", fmt.Errorf("target が workspace 外を指しています (symlink): %q", target)
 	}
 
 	return joined, nil
