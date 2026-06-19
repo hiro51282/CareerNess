@@ -23,7 +23,7 @@ func main() {
 	mux.HandleFunc("/api/v1/patches/validate", handler.PostValidatePatch)
 	mux.HandleFunc("/api/v1/extract", handler.PostExtract)
 	mux.HandleFunc("/api/v1/workspace/attach", handler.PostAttach(store))
-	mux.HandleFunc("/api/v1/apply-patch", handler.PostApplyPatch)
+	mux.HandleFunc("/api/v1/apply-patch", handler.PostApplyPatch(store))
 
 	srv := &http.Server{
 		Addr:    ":8080",
