@@ -149,7 +149,9 @@ func TestApplyPatch_InvalidStatus(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	applier := NewApplier(tempDir)
-	p := &Patch{Status: "invalid_status"}
+	// 構造は valid だが status が不正なケースを検証する。
+	p := upsertPatch("patch-bad-status", "facts/experiences.yaml", newFact("fact-proj-bad", "Bad", "Bad Corp"))
+	p.Status = "invalid_status"
 
 	if _, err := applier.ApplyPatch(p); err == nil {
 		t.Error("ApplyPatch should fail for invalid status")
@@ -161,10 +163,53 @@ func TestApplyPatch_NoOperations(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	applier := NewApplier(tempDir)
-	p := &Patch{Status: StatusProposed, Operations: []Operation{}}
+	p := &Patch{
+		PatchID:     "patch-empty",
+		WorkspaceID: "test-workspace",
+		SessionID:   "sess_test",
+		Status:      StatusProposed,
+		Operations:  []Operation{},
+	}
 
 	if _, err := applier.ApplyPatch(p); err == nil {
 		t.Error("ApplyPatch should fail for patch with no operations")
+	}
+}
+
+// TestApplyPatch_RejectsTraversalTarget は op.Target にトラバーサルを含む patch が
+// 入口の Validate で弾かれ、FS へ到達しないことを検証する（ADR-006）。
+func TestApplyPatch_RejectsTraversalTarget(t *testing.T) {
+	tempDir, _ := os.MkdirTemp("", "careervault-test-")
+	defer os.RemoveAll(tempDir)
+
+	applier := NewApplier(tempDir)
+	p := upsertPatch("patch-evil", "../../etc/evil.yaml", newFact("fact-proj-evil", "Evil", "Evil Corp"))
+
+	if _, err := applier.ApplyPatch(p); err == nil {
+		t.Fatal("traversal target を含む patch は拒否されるべき")
+	}
+}
+
+// TestApplyPatch_RejectsSymlinkEscape は ".." を含まないため Validate は通るが、
+// root 内 symlink が外部を指す target を ResolveWithin が apply 時に遮断することを検証する。
+func TestApplyPatch_RejectsSymlinkEscape(t *testing.T) {
+	root, _ := os.MkdirTemp("", "careervault-root-")
+	defer os.RemoveAll(root)
+	outside, _ := os.MkdirTemp("", "careervault-out-")
+	defer os.RemoveAll(outside)
+
+	if err := os.Symlink(outside, filepath.Join(root, "out")); err != nil {
+		t.Skipf("symlink を作成できない環境: %v", err)
+	}
+
+	applier := NewApplier(root)
+	p := upsertPatch("patch-symlink", "out/evil.yaml", newFact("fact-proj-evil", "Evil", "Evil Corp"))
+
+	if _, err := applier.ApplyPatch(p); err == nil {
+		t.Fatal("symlink 経由の root 外書き込みは遮断されるべき")
+	}
+	if _, err := os.Stat(filepath.Join(outside, "evil.yaml")); err == nil {
+		t.Fatal("root 外（symlink 先）にファイルが作成された")
 	}
 }
 
@@ -298,7 +343,10 @@ func TestApplyMarkFactStatus(t *testing.T) {
 	os.WriteFile(factsFile, content, 0644)
 
 	p := &Patch{
-		Status: StatusApproved,
+		PatchID:     "patch-mark-001",
+		WorkspaceID: "test-workspace",
+		SessionID:   "sess_test",
+		Status:      StatusApproved,
 		Operations: []Operation{
 			{
 				OpID:            "op-001",

@@ -2,6 +2,8 @@
 
 CareerNess では session を一つに潰さない。少なくとも user session、workspace attachment、conversation state を分けて扱う必要がある。
 
+> **MVP 実装スコープ（ADR-006）**: 本ドキュメントは理想形を記述する。MVP では **Workspace Attachment のみ**を、最小フィールド（`session_id` / `workspace_id` / `workspace_root`）の in-memory store として実装する。User Session / Conversation Session / Patch Review Session の分離、attachment 失効（`ExpiresAt`）、capability `Scope`、`Revision` による stale 判定は未実装で、認証（Task3）以降に持ち越す。
+
 ## Session Types
 
 ### User Session

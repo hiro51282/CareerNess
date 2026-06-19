@@ -5,10 +5,15 @@ import (
 	"net/http"
 
 	"careerness/api/internal/handler"
+	"careerness/api/internal/session"
 )
 
 func main() {
 	mux := http.NewServeMux()
+
+	// session attachment（session → workspace_root の束縛）を共有する in-memory store。
+	// attach と apply-patch が同じ束縛を参照する（ADR-006）。
+	store := session.NewStore()
 
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -17,7 +22,8 @@ func main() {
 	mux.HandleFunc("/api/v1/conversations/message", handler.PostMessage)
 	mux.HandleFunc("/api/v1/patches/validate", handler.PostValidatePatch)
 	mux.HandleFunc("/api/v1/extract", handler.PostExtract)
-	mux.HandleFunc("/api/v1/apply-patch", handler.PostApplyPatch)
+	mux.HandleFunc("/api/v1/workspace/attach", handler.PostAttach(store))
+	mux.HandleFunc("/api/v1/apply-patch", handler.PostApplyPatch(store))
 
 	srv := &http.Server{
 		Addr:    ":8080",
