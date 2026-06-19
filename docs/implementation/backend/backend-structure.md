@@ -46,6 +46,8 @@ CareerNess の backend は AppServer であり、AI orchestration layer とし�
 - history append
 - rollback patch generation
 
+> apply は attach 済み session を必須とし、書き込み先は attachment が持つ workspace_root 配下に封じ込める（ADR-006）。root はリクエストボディから受け取らず session store から導出する。
+
 ### Observability Layer
 
 - operational logs
