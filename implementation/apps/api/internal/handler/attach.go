@@ -65,9 +65,20 @@ func PostAttach(store *session.Store) http.HandlerFunc {
 	}
 }
 
+const workspaceRootBaseDir = "/workspaces"
+
 // normalizeRoot は workspace_root を絶対化・symlink 解決し、
-// 実在するディレクトリであることを確認した実パスを返す。
+// 許可されたベースディレクトリ配下にある実在ディレクトリであることを確認した実パスを返す。
 func normalizeRoot(root string) (string, error) {
+	baseAbs, err := filepath.Abs(workspaceRootBaseDir)
+	if err != nil {
+		return "", err
+	}
+	baseReal, err := filepath.EvalSymlinks(baseAbs)
+	if err != nil {
+		return "", fmt.Errorf("workspace base directory が不正です")
+	}
+
 	abs, err := filepath.Abs(root)
 	if err != nil {
 		return "", err
@@ -76,6 +87,15 @@ func normalizeRoot(root string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("ディレクトリが存在しません")
 	}
+
+	rel, err := filepath.Rel(baseReal, real)
+	if err != nil {
+		return "", fmt.Errorf("workspace_root の検証に失敗しました")
+	}
+	if rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) || filepath.IsAbs(rel) {
+		return "", fmt.Errorf("workspace_root は許可されたディレクトリ配下のみ指定できます")
+	}
+
 	info, err := os.Stat(real)
 	if err != nil {
 		return "", err
