@@ -10,7 +10,9 @@ import (
 
 // NormalizeToYAMLFact converts ExtractedFact to YAMLFact (MVP schema format)
 func NormalizeToYAMLFact(extracted *ExtractedFact) (*YAMLFact, error) {
-	now := time.Now().UTC().Format(time.RFC3339) + "Z"
+	// time.RFC3339 は UTC で末尾 "Z" を含むため、追加の "Z" は付けない
+	// （以前は "...ZZ" という不正な timestamp を生成していた）。
+	now := time.Now().UTC().Format(time.RFC3339)
 
 	// Base fact (common to all types)
 	fact := &YAMLFact{

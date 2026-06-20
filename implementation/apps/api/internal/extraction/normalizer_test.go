@@ -3,7 +3,32 @@ package extraction
 import (
 	"strings"
 	"testing"
+	"time"
 )
+
+// TestNormalizeToYAMLFact_CreatedAtIsValidRFC3339 は created_at が妥当な RFC3339 で
+// 生成されること（以前の "...ZZ" 不正形式が再発しないこと）を検証する。
+func TestNormalizeToYAMLFact_CreatedAtIsValidRFC3339(t *testing.T) {
+	extracted := &ExtractedFact{
+		Type:        "skill",
+		FactIDHint:  "go",
+		Summary:     "Go",
+		Description: "Go programming",
+		Confidence:  "high",
+	}
+
+	fact, err := NormalizeToYAMLFact(extracted)
+	if err != nil {
+		t.Fatalf("NormalizeToYAMLFact() error = %v", err)
+	}
+
+	if strings.HasSuffix(fact.CreatedAt, "ZZ") {
+		t.Errorf("created_at が不正な二重 Z 形式: %q", fact.CreatedAt)
+	}
+	if _, err := time.Parse(time.RFC3339, fact.CreatedAt); err != nil {
+		t.Errorf("created_at が RFC3339 として解析できない: %q (%v)", fact.CreatedAt, err)
+	}
+}
 
 func TestNormalizeToYAMLFact_Experience(t *testing.T) {
 	extracted := &ExtractedFact{
