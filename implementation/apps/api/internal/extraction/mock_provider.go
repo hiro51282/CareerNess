@@ -86,26 +86,5 @@ func (m *MockExtractionProvider) SetResponse(result *ExtractedFactResult) {
 }
 
 // 実 provider（CodexExtractionProvider）は codex_provider.go に実装済み。
-// 旧来あった空の reference stub（CodexExtractionProvider / OpenAIExtractionProvider）は
-// 実装の追加に伴い削除した。
-
-// ExtractionProviderFactory allows creating providers based on configuration
-type ExtractionProviderFactory struct {
-	providerType string
-	// config would have provider-specific details
-}
-
-// NewProvider creates appropriate provider based on config
-func NewProvider(providerType string) ExtractionProvider {
-	switch providerType {
-	case "mock":
-		return NewMockExtractionProvider()
-	case "codex":
-		// return NewCodexExtractionProvider(config)
-		// Not implemented in MVP
-		fallthrough
-	default:
-		// Default to mock for safety
-		return NewMockExtractionProvider()
-	}
-}
+// provider 選択（どの provider を返すか）は provider_factory.go に集約した。
+// 旧来あった空の reference stub と silent fallback 型の NewProvider は削除した。

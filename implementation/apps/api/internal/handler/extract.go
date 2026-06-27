@@ -35,8 +35,17 @@ func PostExtract(w http.ResponseWriter, r *http.Request) {
 		req.SessionID = "sess-" + shortID()
 	}
 
+	// provider はリクエスト毎に env から選択・構築する（既定 mock）。
+	// リクエストスコープ構築により、将来の credential リクエスト化を阻害しない。
+	// 注: 詳細なエラー taxonomy（AI 利用不可 / レート制限 等）は Phase C で扱う。
+	provider, err := extraction.NewProviderFromEnv()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "extraction provider の初期化に失敗しました: "+err.Error())
+		return
+	}
+
 	// Extract facts from conversation
-	service := extraction.NewExtractionService(extraction.NewMockExtractionProvider())
+	service := extraction.NewExtractionService(provider)
 	result, err := service.ExtractFromConversation(r.Context(), req.Conversation, req.SessionID)
 	if err != nil {
 		writeError(w, http.StatusUnprocessableEntity, "抽出に失敗しました: "+err.Error())
