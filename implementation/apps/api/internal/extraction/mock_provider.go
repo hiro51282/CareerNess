@@ -85,35 +85,9 @@ func (m *MockExtractionProvider) SetResponse(result *ExtractedFactResult) {
 	m.ResponseOverride = result
 }
 
-// CodexExtractionProvider is a reference implementation that calls Codex app-server
-// This is NOT implemented in MVP but shows the pattern for production use
-type CodexExtractionProvider struct {
-	// In production, this would have:
-	// - CodexAPIURL (e.g., https://codex.example.com)
-	// - HTTPClient
-	// - SessionToken/Auth
-	// And the ExtractFacts method would:
-	// POST /v1/extract {conversation: "..."}
-	// The Codex app-server would then:
-	// 1. Authenticate user's LLM provider (OpenAI, Anthropic, etc.)
-	// 2. Call user's LLM via their own API key
-	// 3. Return structured JSON to CareerNess backend
-}
-
-// ExtractFacts would implement the Codex app-server call
-// func (c *CodexExtractionProvider) ExtractFacts(ctx context.Context, conversation string) (*ExtractedFactResult, error) {
-// 	// POST to Codex app-server
-// 	// Codex app-server handles LLM provider abstraction
-// 	// Returns provider-agnostic structured JSON
-// }
-
-// OpenAIExtractionProvider is a reference for direct OpenAI integration
-// NOT used in MVP - instead calls should go through Codex app-server
-type OpenAIExtractionProvider struct {
-	// In production user's own OpenAI API key would be used
-	// But CareerNess should NOT hold user API keys directly
-	// Instead: user authenticates with their provider via Codex app-server
-}
+// 実 provider（CodexExtractionProvider）は codex_provider.go に実装済み。
+// 旧来あった空の reference stub（CodexExtractionProvider / OpenAIExtractionProvider）は
+// 実装の追加に伴い削除した。
 
 // ExtractionProviderFactory allows creating providers based on configuration
 type ExtractionProviderFactory struct {
