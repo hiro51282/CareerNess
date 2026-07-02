@@ -42,5 +42,5 @@ export interface Patch {
 
 export interface MessageResponse {
   reply: string
-  patch?: Patch
+  patches: Patch[]
 }
