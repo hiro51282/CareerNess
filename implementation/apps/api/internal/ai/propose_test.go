@@ -1,20 +1,24 @@
 package ai
 
 import (
+	"context"
 	"testing"
 
 	"careerness/api/internal/extraction"
 	"careerness/api/internal/patch"
 )
 
-// TestPropose_ProducesCanonicalFact は mock の出力が生ブロブではなく
-// 正規 YAMLFact ベースの upsert_fact パッチであることを検証する（D1）。
+// TestPropose_ProducesCanonicalFact は ExtractionService 経由で得た fact が
+// 正規 YAMLFact ベースの upsert_fact パッチとして返ることを検証する（既定 Mock 経路）。
 func TestPropose_ProducesCanonicalFact(t *testing.T) {
-	res := Propose(&ProposeRequest{
+	res, err := Propose(context.Background(), &ProposeRequest{
 		SessionID:   "sess-test",
 		WorkspaceID: "my-vault",
 		Message:     "2023年にABC社で決済基盤をGoへ移行しCIを短縮した",
 	})
+	if err != nil {
+		t.Fatalf("Propose error: %v", err)
+	}
 
 	if res.Reply == "" {
 		t.Error("reply が空")
@@ -77,7 +81,10 @@ func TestPropose_SummaryTruncation(t *testing.T) {
 	for range 60 {
 		long += "あ"
 	}
-	res := Propose(&ProposeRequest{SessionID: "s", Message: long})
+	res, err := Propose(context.Background(), &ProposeRequest{SessionID: "s", Message: long})
+	if err != nil {
+		t.Fatalf("Propose error: %v", err)
+	}
 	fact := res.Patch.Operations[0].Change.After.(*extraction.YAMLFact)
 	// 40 文字 + 省略記号
 	if []rune(fact.Summary)[40] != '…' {
