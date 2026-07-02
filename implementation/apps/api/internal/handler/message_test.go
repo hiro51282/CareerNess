@@ -24,14 +24,14 @@ func TestPostMessage_DefaultMock(t *testing.T) {
 	}
 
 	var resp struct {
-		Reply string `json:"reply"`
-		Patch *struct {
+		Reply   string `json:"reply"`
+		Patches []struct {
 			WorkspaceID string `json:"workspace_id"`
 			Operations  []struct {
 				Type   string `json:"type"`
 				Target string `json:"target"`
 			} `json:"operations"`
-		} `json:"patch"`
+		} `json:"patches"`
 	}
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("レスポンス解析失敗: %v", err)
@@ -39,17 +39,19 @@ func TestPostMessage_DefaultMock(t *testing.T) {
 	if resp.Reply == "" {
 		t.Error("reply が空")
 	}
-	if resp.Patch == nil {
-		t.Fatal("patch が nil（応答形は単一 patch のまま維持される）")
+	// 既定 Mock は単一 fact のため patches は 1 件（契約は複数対応）。
+	if len(resp.Patches) != 1 {
+		t.Fatalf("patches = %d, want 1", len(resp.Patches))
 	}
-	if resp.Patch.WorkspaceID != "my-vault" {
-		t.Errorf("workspace_id = %q, want my-vault", resp.Patch.WorkspaceID)
+	p0 := resp.Patches[0]
+	if p0.WorkspaceID != "my-vault" {
+		t.Errorf("workspace_id = %q, want my-vault", p0.WorkspaceID)
 	}
-	if len(resp.Patch.Operations) != 1 || resp.Patch.Operations[0].Type != "upsert_fact" {
-		t.Errorf("operations が想定外: %+v", resp.Patch.Operations)
+	if len(p0.Operations) != 1 || p0.Operations[0].Type != "upsert_fact" {
+		t.Errorf("operations が想定外: %+v", p0.Operations)
 	}
-	if resp.Patch.Operations[0].Target != "facts/experiences.yaml" {
-		t.Errorf("target = %q, want facts/experiences.yaml", resp.Patch.Operations[0].Target)
+	if p0.Operations[0].Target != "facts/experiences.yaml" {
+		t.Errorf("target = %q, want facts/experiences.yaml", p0.Operations[0].Target)
 	}
 }
 
