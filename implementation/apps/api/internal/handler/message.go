@@ -32,6 +32,12 @@ func PostMessage(w http.ResponseWriter, r *http.Request) {
 		req.SessionID = "sess-" + shortID()
 	}
 
-	result := ai.Propose(&req)
+	// ctx を透過して抽出を委譲する（明示 deadline は実 AI/CLI provider 導入時に追加）。
+	// 詳細なエラー taxonomy（AI 利用不可 / レート制限 等）は Phase C で扱う。
+	result, err := ai.Propose(r.Context(), &req)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "提案の生成に失敗しました: "+err.Error())
+		return
+	}
 	writeJSON(w, http.StatusOK, result)
 }

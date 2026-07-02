@@ -1,13 +1,12 @@
 // Package ai はワークスペース変更の patch proposal 生成を担う。
-// MVP では mock 実装。後から OpenAI / Claude 等の実 AI 呼び出しに差し替える。
+// チャット経路の fact 抽出は extraction.ExtractionService に一本化しており、
+// ai はその結果を patch proposal（＋チャット返信）へ組み立てる薄い層に徹する。
 package ai
 
 import (
-	"crypto/rand"
-	"encoding/hex"
+	"context"
 	"fmt"
 	"strings"
-	"time"
 	"unicode/utf8"
 
 	"careerness/api/internal/extraction"
@@ -29,30 +28,30 @@ type ProposeResult struct {
 }
 
 // Propose はユーザーの発言を受けて patch proposal を生成する。
-// 実 AI が未統合の間は mock として動作するが、出力は正規の YAMLFact 形に揃える
-// （docs/implementation/workspace/fact-schema.md, ai-patch-format.md）。
-// patch 組み立ては extract 経路と同じ patch.BuildFactUpsert を再利用する。
-func Propose(req *ProposeRequest) *ProposeResult {
-	now := time.Now().UTC().Format(time.RFC3339)
-
-	// 発言から正規 YAMLFact を組み立てる。type の自動分類や action/decision の
-	// 中身埋めは実 AI 統合（Codex）の責務なので、ここでは既定 experience・空のままにする。
-	fact := &extraction.YAMLFact{
-		FactID:      fmt.Sprintf("fact-proj-%s-%s", slugify(req.Message), shortID()),
-		Type:        "experience",
-		Status:      "proposed",
-		Summary:     summarize(req.Message),
-		Description: req.Message,
-		Action:      "", // Phase 1: 空（表示側で description にフォールバック）
-		Decision:    "",
-		Confidence:  "medium",
-		Source:      "conversation",
-		CreatedAt:   now,
-		Company:     "未確認",
-		Tags:        []string{},
+// fact 抽出は extraction.ExtractionService に委譲し（provider は env で選択、既定 Mock）、
+// ここでは得られた fact を patch proposal（extract 経路と同じ patch.BuildFactUpsert）と
+// チャット返信へ組み立てる。実 AI（Codex CLI）の接続は本 PR では行わない。
+//
+// PR-A では応答契約（単一 patch）を維持する。複数 fact（patches[]）対応は後続 PR-B。
+func Propose(ctx context.Context, req *ProposeRequest) (*ProposeResult, error) {
+	provider, err := extraction.NewProviderFromEnv()
+	if err != nil {
+		return nil, fmt.Errorf("extraction provider の初期化に失敗: %w", err)
 	}
 
-	p := patch.BuildFactUpsert(fact, req.SessionID, 0)
+	result, err := extraction.NewExtractionService(provider).
+		ExtractFromConversation(ctx, req.Message, req.SessionID)
+	if err != nil {
+		return nil, err
+	}
+	if len(result.YAMLFacts) == 0 {
+		// ExtractFromConversation は 0 件で error を返す契約だが、防御的に確認する。
+		return nil, fmt.Errorf("会話から fact を抽出できませんでした")
+	}
+
+	// PR-A のスコープとして、抽出結果の先頭 fact を単一 patch として返す
+	// （Mock Provider は本 PR で単一 fact のまま維持）。patches[] 化は PR-B。
+	p := patch.BuildFactUpsert(result.YAMLFacts[0], req.SessionID, 0)
 	// BuildFactUpsert は workspace_id を既定値にするため、リクエスト指定があれば優先する。
 	if req.WorkspaceID != "" {
 		p.WorkspaceID = req.WorkspaceID
@@ -60,12 +59,7 @@ func Propose(req *ProposeRequest) *ProposeResult {
 
 	reply := buildReply(req.Message, len(req.WorkspaceFiles))
 
-	return &ProposeResult{Reply: reply, Patch: p}
-}
-
-// summarize は発言を fact の summary 用に短く整える。
-func summarize(message string) string {
-	return truncateRunes(strings.TrimSpace(message), 40)
+	return &ProposeResult{Reply: reply, Patch: p}, nil
 }
 
 // truncateRunes は文字列を rune 単位で n 文字に切り詰め、超過時は省略記号を付ける。
@@ -86,32 +80,4 @@ func buildReply(message string, fileCount int) string {
 	}
 	sb.WriteString("以下の fact 候補を提案します。内容を確認して承認または却下してください。")
 	return sb.String()
-}
-
-func slugify(s string) string {
-	runes := []rune(s)
-	if len(runes) > 12 {
-		runes = runes[:12]
-	}
-	var b strings.Builder
-	for _, r := range runes {
-		if r >= 'a' && r <= 'z' || r >= '0' && r <= '9' {
-			b.WriteRune(r)
-		} else if r >= 'A' && r <= 'Z' {
-			b.WriteRune(r + 32)
-		} else {
-			b.WriteRune('-')
-		}
-	}
-	result := strings.Trim(b.String(), "-")
-	if result == "" {
-		return "fact"
-	}
-	return result
-}
-
-func shortID() string {
-	b := make([]byte, 4)
-	rand.Read(b)
-	return hex.EncodeToString(b)
 }
