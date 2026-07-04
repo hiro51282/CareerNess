@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import * as yaml from 'js-yaml'
-import { upsertFactYaml } from './factFile'
+import { upsertFactYaml, markFactStatusYaml } from './factFile'
 
 describe('upsertFactYaml', () => {
   it('空ファイルへ新規 fact を配列形で追記する', () => {
@@ -52,5 +52,35 @@ describe('upsertFactYaml', () => {
     const out = upsertFactYaml(legacy, { summary: 's' }, 'fact-001')
     const parsed = yaml.load(out)
     expect(parsed).toEqual([{ fact_id: 'fact-001', summary: 's' }])
+  })
+})
+
+describe('markFactStatusYaml', () => {
+  const existing = yaml.dump([
+    { fact_id: 'fact-a', type: 'experience', status: 'proposed', summary: 'A', tags: ['backend'] },
+    { fact_id: 'fact-b', type: 'skill', status: 'proposed', summary: 'B' },
+  ])
+
+  it('対象 fact の status を更新し、他フィールドは保持する', () => {
+    const out = markFactStatusYaml(existing, 'fact-a', 'confirmed')
+    const parsed = yaml.load(out) as Array<Record<string, unknown>>
+    const a = parsed.find((f) => f.fact_id === 'fact-a')!
+    expect(a.status).toBe('confirmed')
+    expect(a.summary).toBe('A')
+    expect(a.tags).toEqual(['backend'])
+    // 他の fact は不変
+    expect(parsed.find((f) => f.fact_id === 'fact-b')!.status).toBe('proposed')
+  })
+
+  it('updated_at を RFC3339（ミリ秒なし・末尾 Z）で付与する', () => {
+    const out = markFactStatusYaml(existing, 'fact-a', 'confirmed')
+    const parsed = yaml.load(out) as Array<Record<string, unknown>>
+    const a = parsed.find((f) => f.fact_id === 'fact-a')!
+    expect(typeof a.updated_at).toBe('string')
+    expect(a.updated_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/)
+  })
+
+  it('対象 fact が無ければ throw する', () => {
+    expect(() => markFactStatusYaml(existing, 'fact-missing', 'confirmed')).toThrow()
   })
 })

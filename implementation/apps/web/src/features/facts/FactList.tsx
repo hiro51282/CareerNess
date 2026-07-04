@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useWorkspace } from '../workspace/useWorkspace'
+import type { Operation } from '../../types/patch'
 import { collectFacts, type FactEntry, type FactRecord } from './collectFacts'
 
 const TYPE_ORDER = ['experience', 'achievement', 'skill']
@@ -59,9 +60,38 @@ export function FactList() {
 }
 
 function FactCard({ entry }: { entry: FactEntry }) {
+  const { applyOperations } = useWorkspace()
   const [open, setOpen] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const f: FactRecord = entry.fact
   const hasDetail = Boolean(f.description) || Boolean(f.company) || Boolean(f.period)
+
+  // ユーザーが明示的に確定できるのは proposed / inferred かつ fact_id を持つ fact。
+  const canConfirm = Boolean(f.fact_id) && (f.status === 'proposed' || f.status === 'inferred')
+
+  async function handleConfirm() {
+    setConfirming(true)
+    setError(null)
+    try {
+      const op: Operation = {
+        op_id: 'op-confirm',
+        type: 'mark_fact_status',
+        target: entry.file,
+        entity_id: String(f.fact_id),
+        change: { before: f.status ?? null, after: 'confirmed' },
+        rationale: 'ユーザーが確定',
+        confidence: 'high',
+        fact_status_after: 'confirmed',
+      }
+      // 適用後 refreshFiles により status バッジが confirmed へ更新される。
+      await applyOperations([op])
+    } catch (e) {
+      setError(String(e))
+    } finally {
+      setConfirming(false)
+    }
+  }
 
   return (
     <div style={styles.card}>
@@ -96,6 +126,17 @@ function FactCard({ entry }: { entry: FactEntry }) {
             {entry.file}
             {f.fact_id ? ` ／ ${String(f.fact_id)}` : ''}
           </p>
+        </div>
+      )}
+
+      {(canConfirm || error) && (
+        <div style={styles.footer}>
+          {canConfirm && (
+            <button style={styles.confirmBtn} onClick={handleConfirm} disabled={confirming}>
+              {confirming ? '確定中…' : '確定にする'}
+            </button>
+          )}
+          {error && <span style={styles.errorText}>{error}</span>}
         </div>
       )}
     </div>
@@ -176,5 +217,18 @@ const styles: Record<string, React.CSSProperties> = {
   metaLine: { fontSize: 12, color: '#555' },
   description: { fontSize: 13, color: '#444', lineHeight: 1.6, whiteSpace: 'pre-wrap' },
   source: { fontSize: 11, color: '#aaa', fontFamily: 'monospace' },
+  footer: { display: 'flex', alignItems: 'center', gap: 8 },
+  confirmBtn: {
+    fontSize: 12,
+    fontWeight: 600,
+    color: '#fff',
+    background: '#16a34a',
+    border: 'none',
+    borderRadius: 6,
+    padding: '4px 12px',
+    cursor: 'pointer',
+    alignSelf: 'flex-start',
+  },
+  errorText: { fontSize: 12, color: '#dc2626' },
   empty: { padding: 32, fontSize: 14, color: '#888', lineHeight: 1.8, textAlign: 'center' },
 }

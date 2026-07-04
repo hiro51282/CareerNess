@@ -33,6 +33,32 @@ export function upsertFactYaml(
   return yaml.dump(facts, { lineWidth: 120 })
 }
 
+/**
+ * markFactStatusYaml は既存の facts ファイル本文から factId の fact を探し、
+ * その status を書き換えて（updated_at を付与して）正本形の YAML を返す純関数。
+ *
+ * - status フィールドのみを更新し、他フィールドは保持する。
+ * - Go 側 applier（applyMarkFactStatus）と同挙動に揃える。
+ * - 対象 fact が見つからない場合はエラーにする（サイレントに無変更で成功させない）。
+ */
+export function markFactStatusYaml(
+  existingText: string,
+  factId: string,
+  status: string,
+): string {
+  const facts = parseFactList(existingText)
+  const idx = facts.findIndex((f) => f['fact_id'] === factId)
+  if (idx < 0) {
+    throw new Error(`fact ${factId} が見つかりません`)
+  }
+  facts[idx] = {
+    ...facts[idx],
+    status,
+    updated_at: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
+  }
+  return yaml.dump(facts, { lineWidth: 120 })
+}
+
 // 既存テキストを fact 配列として読む。配列でない / 壊れている場合は空配列から開始する。
 // upsert（書き込み）と Fact ビューア（読み取り）で同一の寛容なパーサを共有する。
 export function parseFactList(text: string): Record<string, unknown>[] {
