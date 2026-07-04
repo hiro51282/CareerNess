@@ -1,24 +1,45 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import type { Patch, Operation } from '../../types/patch'
 import { useWorkspace } from '../workspace/useWorkspace'
 
 interface Props {
-  patch: Patch
-  onApproved: (appliedPaths: string[]) => void
-  onRejected: () => void
+  patches: Patch[]
+  // 適用結果の通知（ドメイン）。パネルを閉じる責務とは分離する。
+  onApplied: (appliedPaths: string[]) => void
+  // レビュー完了・中断時にパネルを閉じる（UI）。
+  onClose: () => void
 }
 
-export function PatchReview({ patch, onApproved, onRejected }: Props) {
+// 1 patch = 1 セマンティック変更（ADR-002）に沿い、複数 patch を逐次レビューする。
+export function PatchReview({ patches, onApplied, onClose }: Props) {
   const { applyOperations } = useWorkspace()
+  const [index, setIndex] = useState(0)
   const [applying, setApplying] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const appliedRef = useRef<string[]>([])
+
+  const patch = patches[index]
+  const isLast = index >= patches.length - 1
+  const multi = patches.length > 1
+
+  function finish() {
+    onApplied(appliedRef.current)
+    onClose()
+  }
+
+  // 現在の patch のレビューを終え、次へ進む（最後なら適用結果を通知して閉じる）。
+  function advance() {
+    if (isLast) finish()
+    else setIndex(i => i + 1)
+  }
 
   async function handleApprove() {
     setApplying(true)
     setError(null)
     try {
       const applied = await applyOperations(patch.operations)
-      onApproved(applied)
+      appliedRef.current = [...appliedRef.current, ...applied]
+      advance()
     } catch (e) {
       setError(String(e))
     } finally {
@@ -32,7 +53,9 @@ export function PatchReview({ patch, onApproved, onRejected }: Props) {
     <div style={styles.overlay}>
       <div style={styles.panel}>
         <header style={styles.header}>
-          <h2 style={styles.title}>変更提案を確認</h2>
+          <h2 style={styles.title}>
+            変更提案を確認{multi ? `（${index + 1} / ${patches.length}）` : ''}
+          </h2>
           <RiskBadge level={riskLevel} />
         </header>
 
@@ -50,11 +73,11 @@ export function PatchReview({ patch, onApproved, onRejected }: Props) {
         {error && <p style={styles.error}>{error}</p>}
 
         <div style={styles.actions}>
-          <button style={styles.rejectBtn} onClick={onRejected} disabled={applying}>
-            却下
+          <button style={styles.rejectBtn} onClick={advance} disabled={applying}>
+            {isLast ? '却下して閉じる' : '却下して次へ'}
           </button>
           <button style={styles.approveBtn} onClick={handleApprove} disabled={applying}>
-            {applying ? '適用中…' : '承認して適用'}
+            {applying ? '適用中…' : isLast ? '承認して適用' : '承認して次へ'}
           </button>
         </div>
       </div>

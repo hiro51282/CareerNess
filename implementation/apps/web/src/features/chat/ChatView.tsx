@@ -6,14 +6,14 @@ import type { Patch } from '../../types/patch'
 interface Message {
   role: 'user' | 'ai'
   text: string
-  patch?: Patch
+  patches?: Patch[]
 }
 
 interface Props {
-  onPatchProposed: (patch: Patch) => void
+  onPatchesProposed: (patches: Patch[]) => void
 }
 
-export function ChatView({ onPatchProposed }: Props) {
+export function ChatView({ onPatchesProposed }: Props) {
   const { workspaceId, files } = useWorkspace()
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -42,9 +42,9 @@ export function ChatView({ onPatchProposed }: Props) {
       files.forEach((content, path) => { workspaceFiles[path] = content })
 
       const result = await sendMessage({ sessionId, workspaceId, message: text, workspaceFiles })
-      setMessages(prev => [...prev, { role: 'ai', text: result.reply, patch: result.patch }])
-      if (result.patch) {
-        onPatchProposed(result.patch)
+      setMessages(prev => [...prev, { role: 'ai', text: result.reply, patches: result.patches }])
+      if (result.patches?.length) {
+        onPatchesProposed(result.patches)
       }
     } catch (e) {
       setMessages(prev => [...prev, { role: 'ai', text: `エラーが発生しました: ${String(e)}` }])
@@ -67,14 +67,14 @@ export function ChatView({ onPatchProposed }: Props) {
           <div key={i} style={{ ...styles.bubble, ...(m.role === 'user' ? styles.userBubble : styles.aiBubble) }}>
             <span style={styles.role}>{m.role === 'user' ? 'あなた' : 'AI'}</span>
             <p style={styles.text}>{m.text}</p>
-            {m.patch && (
+            {m.patches?.length ? (
               <button
                 style={styles.viewPatch}
-                onClick={() => onPatchProposed(m.patch!)}
+                onClick={() => onPatchesProposed(m.patches!)}
               >
                 提案された変更を確認する →
               </button>
-            )}
+            ) : null}
           </div>
         ))}
         {loading && (

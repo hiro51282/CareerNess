@@ -23,18 +23,20 @@ func TestPropose_ProducesCanonicalFact(t *testing.T) {
 	if res.Reply == "" {
 		t.Error("reply が空")
 	}
-	if res.Patch == nil {
-		t.Fatal("patch が nil")
+	// Mock は本 PR で単一 fact のまま維持するため patches は 1 件（契約は複数対応）。
+	if len(res.Patches) != 1 {
+		t.Fatalf("patches = %d, want 1", len(res.Patches))
 	}
+	p0 := res.Patches[0]
 	// リクエストの workspace_id が優先されること
-	if res.Patch.WorkspaceID != "my-vault" {
-		t.Errorf("workspace_id = %q, want my-vault", res.Patch.WorkspaceID)
+	if p0.WorkspaceID != "my-vault" {
+		t.Errorf("workspace_id = %q, want my-vault", p0.WorkspaceID)
 	}
-	if len(res.Patch.Operations) != 1 {
-		t.Fatalf("operations = %d, want 1", len(res.Patch.Operations))
+	if len(p0.Operations) != 1 {
+		t.Fatalf("operations = %d, want 1", len(p0.Operations))
 	}
 
-	op := res.Patch.Operations[0]
+	op := p0.Operations[0]
 	if op.Type != patch.OpUpsertFact {
 		t.Errorf("op type = %q, want upsert_fact", op.Type)
 	}
@@ -70,7 +72,7 @@ func TestPropose_ProducesCanonicalFact(t *testing.T) {
 	}
 
 	// docs 準拠の patch であること
-	if err := patch.Validate(res.Patch); err != nil {
+	if err := patch.Validate(p0); err != nil {
 		t.Fatalf("Propose が不正な patch を生成: %v", err)
 	}
 }
@@ -85,7 +87,7 @@ func TestPropose_SummaryTruncation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Propose error: %v", err)
 	}
-	fact := res.Patch.Operations[0].Change.After.(*extraction.YAMLFact)
+	fact := res.Patches[0].Operations[0].Change.After.(*extraction.YAMLFact)
 	// 40 文字 + 省略記号
 	if []rune(fact.Summary)[40] != '…' {
 		t.Errorf("summary が 40 文字で省略されていない: %q", fact.Summary)

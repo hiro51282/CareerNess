@@ -8,17 +8,24 @@ import type { Patch } from './types/patch'
 
 function AppContent() {
   const { dirHandle, workspaceId, files } = useWorkspace()
-  const [pendingPatch, setPendingPatch] = useState<Patch | null>(null)
+  const [pendingPatches, setPendingPatches] = useState<Patch[]>([])
   const [appliedNotice, setAppliedNotice] = useState<string | null>(null)
 
   if (!dirHandle) {
     return <WorkspaceAttach />
   }
 
-  function handleApproved(appliedPaths: string[]) {
-    setPendingPatch(null)
-    setAppliedNotice(`${appliedPaths.length} 件のファイルを更新しました: ${appliedPaths.join(', ')}`)
+  // 適用結果の通知（ドメインイベント）。パネルの開閉とは責務を分ける。
+  function handleApplied(appliedPaths: string[]) {
+    const unique = [...new Set(appliedPaths)]
+    if (unique.length === 0) return
+    setAppliedNotice(`${unique.length} 件のファイルを更新しました: ${unique.join(', ')}`)
     setTimeout(() => setAppliedNotice(null), 4000)
+  }
+
+  // レビュー・パネルを閉じる（UI イベント）。
+  function handleClose() {
+    setPendingPatches([])
   }
 
   return (
@@ -44,14 +51,14 @@ function AppContent() {
         {appliedNotice && (
           <div style={styles.notice}>{appliedNotice}</div>
         )}
-        <ChatView onPatchProposed={setPendingPatch} />
+        <ChatView onPatchesProposed={setPendingPatches} />
       </main>
 
-      {pendingPatch && (
+      {pendingPatches.length > 0 && (
         <PatchReview
-          patch={pendingPatch}
-          onApproved={handleApproved}
-          onRejected={() => setPendingPatch(null)}
+          patches={pendingPatches}
+          onApplied={handleApplied}
+          onClose={handleClose}
         />
       )}
     </div>

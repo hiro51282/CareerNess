@@ -22,9 +22,10 @@ type ProposeRequest struct {
 }
 
 // ProposeResult は AI が返す提案結果。
+// 1 会話ターンから複数 fact が抽出され得るため、patch は複数返す（1 patch = 1 fact）。
 type ProposeResult struct {
-	Reply string       `json:"reply"`
-	Patch *patch.Patch `json:"patch,omitempty"`
+	Reply   string         `json:"reply"`
+	Patches []*patch.Patch `json:"patches"`
 }
 
 // Propose はユーザーの発言を受けて patch proposal を生成する。
@@ -49,17 +50,20 @@ func Propose(ctx context.Context, req *ProposeRequest) (*ProposeResult, error) {
 		return nil, fmt.Errorf("会話から fact を抽出できませんでした")
 	}
 
-	// PR-A のスコープとして、抽出結果の先頭 fact を単一 patch として返す
-	// （Mock Provider は本 PR で単一 fact のまま維持）。patches[] 化は PR-B。
-	p := patch.BuildFactUpsert(result.YAMLFacts[0], req.SessionID, 0)
-	// BuildFactUpsert は workspace_id を既定値にするため、リクエスト指定があれば優先する。
-	if req.WorkspaceID != "" {
-		p.WorkspaceID = req.WorkspaceID
+	// 抽出された全 fact を patch 提案化する（1 patch = 1 fact、extract 経路と同じ組み立て）。
+	patches := make([]*patch.Patch, 0, len(result.YAMLFacts))
+	for i, fact := range result.YAMLFacts {
+		p := patch.BuildFactUpsert(fact, req.SessionID, i)
+		// BuildFactUpsert は workspace_id を既定値にするため、リクエスト指定があれば優先する。
+		if req.WorkspaceID != "" {
+			p.WorkspaceID = req.WorkspaceID
+		}
+		patches = append(patches, p)
 	}
 
 	reply := buildReply(req.Message, len(req.WorkspaceFiles))
 
-	return &ProposeResult{Reply: reply, Patch: p}, nil
+	return &ProposeResult{Reply: reply, Patches: patches}, nil
 }
 
 // truncateRunes は文字列を rune 単位で n 文字に切り詰め、超過時は省略記号を付ける。
