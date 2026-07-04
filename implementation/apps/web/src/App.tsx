@@ -44,7 +44,7 @@ function AppContent() {
             </div>
           ))}
           {files.size === 0 && (
-            <p style={styles.empty}>ファイルがありません。<br/>facts/ などのフォルダを作成してください。</p>
+            <p style={styles.empty}>まだファイルがありません。<br/>チャットから fact を追加すると facts/ 配下に保存されます。</p>
           )}
         </div>
       </aside>
