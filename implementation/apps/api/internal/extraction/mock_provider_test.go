@@ -7,6 +7,28 @@ import (
 	"time"
 )
 
+// TestMock_DistinctHintPerConversation は、英数字を含まない別々の日本語発言でも
+// fact_id_hint が衝突せず、同一発言では同一 hint になる（idempotent）ことを検証する。
+func TestMock_DistinctHintPerConversation(t *testing.T) {
+	m := NewMockExtractionProvider()
+	hint := func(conv string) string {
+		res, err := m.ExtractFacts(context.Background(), conv)
+		if err != nil {
+			t.Fatalf("ExtractFacts error: %v", err)
+		}
+		return res.ExtractedFacts[0].FactIDHint
+	}
+
+	a := hint("チームをリードした")
+	b := hint("決済基盤を移行した")
+	if a == b {
+		t.Errorf("異なる発言が同一 hint に衝突: %q", a)
+	}
+	if hint("チームをリードした") != a {
+		t.Error("同一発言は同一 hint であるべき（idempotent）")
+	}
+}
+
 // TestMock_ReflectsConversation は mock が固定値でなく会話を反映することを検証する。
 func TestMock_ReflectsConversation(t *testing.T) {
 	m := NewMockExtractionProvider()

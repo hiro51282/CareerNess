@@ -2,6 +2,8 @@ package extraction
 
 import (
 	"context"
+	"fmt"
+	"hash/fnv"
 	"strings"
 	"unicode/utf8"
 )
@@ -87,9 +89,11 @@ func mockSummary(conversation string) string {
 	return string([]rune(s)[:max]) + "…"
 }
 
-// mockFactIDHint は会話から fact_id_hint 用の安定 slug を作る。
-// normalizer が "fact-proj-<hint>" を生成し validFactIDFormat を満たすよう、
-// 英数字以外は "-" に畳み、空になる場合は "project" にフォールバックする。
+// mockFactIDHint は会話から fact_id_hint 用の slug を作る。
+// normalizer が "fact-proj-<hint>" を生成し validFactIDFormat を満たすよう英数字以外は
+// "-" に畳む。さらに会話ハッシュを接尾辞に付け、slug が空/重複でも fact_id が衝突しない
+// ようにする（英数字を含まない日本語発言はすべて空 slug に潰れ、以前は上書きされていた）。
+// 同一発言は同一 hint（idempotent に upsert）、異なる発言は異なる hint になる。
 func mockFactIDHint(conversation string) string {
 	runes := []rune(conversation)
 	if len(runes) > 12 {
@@ -106,11 +110,19 @@ func mockFactIDHint(conversation string) string {
 			b.WriteRune('-')
 		}
 	}
-	hint := strings.Trim(b.String(), "-")
-	if hint == "" {
-		return "project"
+	slug := strings.Trim(b.String(), "-")
+	suffix := shortHash(conversation)
+	if slug == "" {
+		return suffix
 	}
-	return hint
+	return slug + "-" + suffix
+}
+
+// shortHash は会話の安定した短いハッシュ（8 桁 hex）を返す。
+func shortHash(s string) string {
+	h := fnv.New32a()
+	h.Write([]byte(s))
+	return fmt.Sprintf("%08x", h.Sum32())
 }
 
 // 実 provider（CodexExtractionProvider）は codex_provider.go に実装済み。
