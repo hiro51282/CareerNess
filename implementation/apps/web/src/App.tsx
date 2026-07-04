@@ -4,12 +4,14 @@ import { useWorkspace } from './features/workspace/useWorkspace'
 import { WorkspaceAttach } from './features/workspace/WorkspaceAttach'
 import { ChatView } from './features/chat/ChatView'
 import { PatchReview } from './features/patch-review/PatchReview'
+import { FactList } from './features/facts/FactList'
 import type { Patch } from './types/patch'
 
 function AppContent() {
   const { dirHandle, workspaceId, files } = useWorkspace()
   const [pendingPatches, setPendingPatches] = useState<Patch[]>([])
   const [appliedNotice, setAppliedNotice] = useState<string | null>(null)
+  const [view, setView] = useState<'chat' | 'facts'>('chat')
 
   if (!dirHandle) {
     return <WorkspaceAttach />
@@ -51,7 +53,27 @@ function AppContent() {
         {appliedNotice && (
           <div style={styles.notice}>{appliedNotice}</div>
         )}
-        <ChatView onPatchesProposed={setPendingPatches} />
+        <div style={styles.tabs}>
+          <button
+            style={{ ...styles.tab, ...(view === 'chat' ? styles.tabActive : {}) }}
+            onClick={() => setView('chat')}
+          >
+            チャット
+          </button>
+          <button
+            style={{ ...styles.tab, ...(view === 'facts' ? styles.tabActive : {}) }}
+            onClick={() => setView('facts')}
+          >
+            Facts
+          </button>
+        </div>
+        <div style={styles.viewArea}>
+          {view === 'chat' ? (
+            <ChatView onPatchesProposed={setPendingPatches} />
+          ) : (
+            <FactList />
+          )}
+        </div>
       </main>
 
       {pendingPatches.length > 0 && (
@@ -130,6 +152,35 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: 'hidden',
     background: '#f8f9fa',
     position: 'relative',
+  },
+  tabs: {
+    display: 'flex',
+    gap: 4,
+    padding: '8px 12px 0',
+    background: '#fff',
+    borderBottom: '1px solid #e5e5e5',
+    flexShrink: 0,
+  },
+  tab: {
+    padding: '8px 16px',
+    fontSize: 13,
+    fontWeight: 600,
+    color: '#888',
+    background: 'none',
+    border: 'none',
+    borderBottom: '2px solid transparent',
+    cursor: 'pointer',
+  },
+  tabActive: {
+    color: '#1a1a1a',
+    borderBottom: '2px solid #1a1a1a',
+  },
+  viewArea: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+    minHeight: 0,
   },
   notice: {
     position: 'absolute',

@@ -34,7 +34,8 @@ export function upsertFactYaml(
 }
 
 // 既存テキストを fact 配列として読む。配列でない / 壊れている場合は空配列から開始する。
-function parseFactList(text: string): Record<string, unknown>[] {
+// upsert（書き込み）と Fact ビューア（読み取り）で同一の寛容なパーサを共有する。
+export function parseFactList(text: string): Record<string, unknown>[] {
   if (!text || !text.trim()) return []
   let loaded: unknown
   try {
