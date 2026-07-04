@@ -1,6 +1,6 @@
 import { createContext, useState, useCallback, type ReactNode } from 'react'
 import type { Operation } from '../../types/patch'
-import { upsertFactYaml } from './factFile'
+import { upsertFactYaml, markFactStatusYaml } from './factFile'
 
 export interface WorkspaceContextType {
   dirHandle: FileSystemDirectoryHandle | null
@@ -46,6 +46,12 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         op.type === 'upsert_fact'
       ) {
         await writeFile(dirHandle, op.target, op.change.after, op.entity_id)
+        applied.push(op.target)
+      } else if (op.type === 'mark_fact_status') {
+        // 既存 fact の status のみを更新する（Go applier と同挙動）。
+        if (!op.entity_id) throw new Error('mark_fact_status には entity_id が必要です')
+        if (!op.fact_status_after) throw new Error('mark_fact_status には fact_status_after が必要です')
+        await markFactStatus(dirHandle, op.target, op.entity_id, op.fact_status_after)
         applied.push(op.target)
       }
       // delete_file は UI で明示確認を経てから別フローで行う（MVP ではスキップ）
@@ -120,6 +126,30 @@ async function writeFile(
   }
 
   const fileHandle = await dir.getFileHandle(fileName, { create: true })
+  const writable = await fileHandle.createWritable()
+  await writable.write(text)
+  await writable.close()
+}
+
+// markFactStatus は既存の facts ファイル内の 1 fact の status を更新する。
+// 対象ファイル / fact が無ければエラーにする（新規作成はしない）。
+async function markFactStatus(
+  root: FileSystemDirectoryHandle,
+  target: string,
+  factId: string,
+  status: string,
+) {
+  const parts = target.split('/')
+  const fileName = parts.pop()!
+  let dir = root
+  for (const part of parts) {
+    dir = await dir.getDirectoryHandle(part)
+  }
+  const fileHandle = await dir.getFileHandle(fileName)
+  const existingText = await (await fileHandle.getFile()).text()
+
+  const text = markFactStatusYaml(existingText, factId, status)
+
   const writable = await fileHandle.createWritable()
   await writable.write(text)
   await writable.close()
