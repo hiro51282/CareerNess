@@ -11,6 +11,10 @@ import (
 	"time"
 )
 
+// Deprecated: HTTP/OpenAI 直叩きは CareerNESS が credential を管理する前提のため、
+// 現行 MVP の正式経路から外している（正式経路は CodexCLIProvider。ai-foundation-direction.md）。
+// 削除はせず休眠保持し、将来 API 提供を正式サポートする段階で復活・再設計する余地を残す。
+//
 // CodexExtractionProvider はユーザー自身の OpenAI アカウント（ADR-004）を使い、
 // OpenAI Chat Completions API へ会話を投げて構造化 JSON を得る provider。
 //
