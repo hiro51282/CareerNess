@@ -11,7 +11,7 @@
 | モノレポ | pnpm workspaces（Turborepo/Nx は使わない） |
 | ワークスペース読み書き | File System Access API（ブラウザ側、Chrome/Edge のみ） |
 | データ形式 | YAML |
-| AI 統合 | Codex AppServer 経由（MVP は mock 実装） |
+| AI 統合 | Structured Extraction Provider（現状 Mock、正式経路は Codex CLI）。`docs/implementation/ai/ai-foundation-direction.md` 参照 |
 
 pnpm は `~/.local/bin/pnpm` に入っている。
 
@@ -39,9 +39,22 @@ cd implementation/apps/web && ~/.local/bin/pnpm exec tsc --noEmit
 
 vite.config.ts に `/api` → `localhost:8080` のプロキシ設定済みなので、フロントエンドから `/api/v1/...` でバックエンドに接続できる。
 
+### 検証ゲート / DoD
+
+PR は自動 Checker（CI）と以下ローカル検証が緑であること（Loop Engineering。詳細は `AGENTS.md`）：
+
+- Go: `go build ./...` / `go vet ./...` / `go test ./...`（`implementation/apps/api`）
+- Web: `~/.local/bin/pnpm --filter web run test`（vitest）/ `~/.local/bin/pnpm build:web`（`tsc` 込み）
+- CI: `.github/workflows/ci.yml`（`api` / `web`）＋ CodeQL。PR テンプレは `.github/pull_request_template.md`。
+
 ## プロジェクト状況
 
-CareerNess は現在 **アーキテクチャ / プロトタイプフェーズ** です。`implementation/` 配下は README のみで、実装コードはまだありません。
+CareerNess は **CareerNESS Editor（Career Vault の編集ツール）MVP のコアループ完成**フェーズです。
+チャット → Fact 抽出 → レビュー → Vault 反映 → Facts 閲覧 → 確定（`proposed` → `confirmed`）まで app 内で一巡できる。
+
+- 実装は `apps/api`（Go: `internal/` の extraction / patch / workspace / session / handler / ai）と `apps/web`（React）にある（`packages/*` は現状スタブ）。
+- Fact 抽出は現状 **Mock Provider**。実 AI の正式経路は **Codex CLI**（今後実装）。方向性は `docs/implementation/ai/ai-foundation-direction.md`。
+- 開発プロセスは **Loop Engineering（Maker/Checker）**。`AGENTS.md` と CI（`.github/workflows/ci.yml`）を参照。
 
 ## リポジトリ構成
 
@@ -53,7 +66,7 @@ CareerNess/
 │   ├── ai/                      # AI 動作仕様、プロンプト戦略
 │   ├── implementation/          # 実装設計書（読む順序は後述）
 │   └── ...
-└── implementation/              # ソースコード（モノレポ、現在はスタブのみ）
+└── implementation/              # ソースコード（モノレポ。apps/ に実装あり、packages/ は現状スタブ）
     ├── apps/
     │   ├── web/                 # ブラウザ UI
     │   └── api/                 # AppServer — AI オーケストレーション層
