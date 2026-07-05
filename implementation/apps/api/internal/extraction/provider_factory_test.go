@@ -45,6 +45,19 @@ func TestNewProviderFromEnv_CodexMissingKey(t *testing.T) {
 	}
 }
 
+// TestNewProviderFromEnv_CodexCLI は正式な実 AI 経路（credential-free）を検証する。
+// credential 不要なので鍵の env は設定しない。
+func TestNewProviderFromEnv_CodexCLI(t *testing.T) {
+	t.Setenv("EXTRACTION_PROVIDER", "codex-cli")
+	p, err := NewProviderFromEnv()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if p.Name() != "codex-cli" {
+		t.Errorf("Name = %q, want codex-cli", p.Name())
+	}
+}
+
 func TestNewProviderFromEnv_Unknown(t *testing.T) {
 	t.Setenv("EXTRACTION_PROVIDER", "bogus")
 	if _, err := NewProviderFromEnv(); err == nil {

@@ -14,27 +14,34 @@ import (
 // 受け取る方向になる想定。そのタイミングで本関数を NewProvider(config) のような
 // 名称・シグネチャへ整理するか再評価する（Phase A では env 固定で適切なため変更不要）。
 //
-// 選択ルール（Task4 Phase A）:
+// 選択ルール:
 //   - EXTRACTION_PROVIDER 未設定 or "mock" → MockExtractionProvider（既定）
-//   - "codex" → CodexExtractionProvider。OPENAI_API_KEY 欠落は明示エラー
-//     （mock へのサイレントフォールバックはしない）
-//   - それ以外 → 明示エラー
+//   - "codex-cli" → CodexCLIProvider（**正式な実 AI 経路**。credential は codex CLI 側に
+//     閉じ CareerNESS は鍵に触れない。ai-foundation-direction.md）
+//   - "codex" → CodexExtractionProvider（HTTP/OpenAI 直叩き。**deprecated**：CareerNESS が
+//     credential を管理する前提のため現行 MVP の正式経路から外している。休眠保持）
+//   - それ以外 → 明示エラー（mock へのサイレントフォールバックはしない）
 //
-// credential（OPENAI_API_KEY）はここで env から読み、構築した provider に注入するのみ。
-// 永続化せず、session / workspace とも混在させない。呼び出し側（handler）は本関数を
-// リクエスト毎に呼ぶことで provider をリクエストスコープで構築する。これにより将来の
-// マルチユーザー化（credential を env からリクエスト由来へ差し替える）を阻害しない。
+// 呼び出し側（handler）は本関数をリクエスト毎に呼ぶことで provider をリクエストスコープで
+// 構築する。これにより将来のマルチユーザー化を阻害しない。
 func NewProviderFromEnv() (ExtractionProvider, error) {
 	switch os.Getenv("EXTRACTION_PROVIDER") {
 	case "", "mock":
 		return NewMockExtractionProvider(), nil
+	case "codex-cli":
+		// credential-free。bin/model は任意（空なら provider 既定 "codex"）。
+		return NewCodexCLIProvider(CodexCLIConfig{
+			Bin:   os.Getenv("CODEX_CLI_BIN"),
+			Model: os.Getenv("CODEX_CLI_MODEL"),
+		}), nil
 	case "codex":
+		// deprecated（HTTP）。credential 管理前提のため正式経路から外す。
 		return NewCodexExtractionProvider(CodexConfig{
 			APIKey:  os.Getenv("OPENAI_API_KEY"),
 			BaseURL: os.Getenv("OPENAI_BASE_URL"), // 任意。空なら provider 既定
 			Model:   os.Getenv("OPENAI_MODEL"),    // 任意。空なら provider 既定
 		})
 	default:
-		return nil, fmt.Errorf("unknown EXTRACTION_PROVIDER %q (expected \"mock\" or \"codex\")", os.Getenv("EXTRACTION_PROVIDER"))
+		return nil, fmt.Errorf("unknown EXTRACTION_PROVIDER %q (expected \"mock\", \"codex-cli\", or \"codex\")", os.Getenv("EXTRACTION_PROVIDER"))
 	}
 }
