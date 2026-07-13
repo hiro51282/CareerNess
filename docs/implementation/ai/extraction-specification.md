@@ -16,6 +16,13 @@
 > 非 fact の発言（質問・雑談）には `reply` で応答し、キャリアの話へ誘導する。
 > fact 捏造禁止の原則は不変。§3 の型定義と §5 の prompt はこの契約が正。
 
+> **[拡張 2026-07-19] 会話履歴（multi-turn）の導入**  
+> conversation には直近の会話 transcript（`user:` / `assistant:` プレフィクス付き行、
+> 末尾の `user:` 行が最新発言）を渡せる。プレフィクスが無い場合は単一発言として扱う。
+> 会話中の既出 fact に詳細が追加された場合（clarification への回答など）、AI は
+> **同じ `fact_id_hint` を再利用**して完全な更新版 fact を再出力する（重複でなく更新）。
+> 同一 hint → 同一 `fact_id` → 既存の upsert が同一 id 置換するため、承認で fact が育つ。
+
 AI が user との会話からキャリア fact を抽出し、patch proposal を生成するための Go ベースの仕様。
 
 **Philosophy**: LLM を「structured JSON extraction provider」として扱い、extraction output を Go struct に deserialize → validate → normalize → patch generation する deterministic pipeline。AI provider は OpenAI Codex（ユーザー自身のアカウント）を使用する（ADR-004）。
@@ -518,6 +525,9 @@ Your task:
 - If the statement contains no extractable career fact (questions, small talk, meta questions),
   return an empty "extracted_facts" array and use "reply" to answer the user and gently guide
   the conversation toward their career experiences
+- If the latest statement adds detail to a career fact already discussed in the conversation
+  (e.g. the user answers your clarification question), re-emit the complete updated fact and
+  reuse the SAME fact_id_hint so the fact is updated rather than duplicated
 
 Do NOT:
 - Invent or infer facts not stated
@@ -530,9 +540,11 @@ Output ONLY valid JSON matching the provided schema. No markdown, no explanation
 
 // getUserPrompt returns the user prompt with conversation
 func getUserPrompt(conversation string) string {
-	return fmt.Sprintf(`Chat with the user and extract career facts from this user statement.
+	return fmt.Sprintf(`Chat with the user and extract career facts from this conversation.
 
-User statement:
+Conversation (lines are prefixed with their speaker; the final "user:" line is the latest
+statement to respond to; if no speaker prefixes are present, treat the whole text as a
+single user statement):
 "%s"
 
 Output JSON with structure:

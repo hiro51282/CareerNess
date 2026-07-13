@@ -1,4 +1,4 @@
-import type { MessageResponse, Patch } from '../types/patch'
+import type { MessageResponse, Patch, ChatTurn } from '../types/patch'
 
 const BASE = '/api/v1'
 
@@ -6,6 +6,7 @@ export async function sendMessage(params: {
   sessionId: string
   workspaceId: string
   message: string
+  history: ChatTurn[]
   workspaceFiles: Record<string, string>
 }): Promise<MessageResponse> {
   const res = await fetch(`${BASE}/conversations/message`, {
@@ -15,6 +16,7 @@ export async function sendMessage(params: {
       session_id: params.sessionId,
       workspace_id: params.workspaceId,
       message: params.message,
+      history: params.history,
       workspace_files: params.workspaceFiles,
     }),
   })

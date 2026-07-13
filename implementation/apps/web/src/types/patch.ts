@@ -44,3 +44,9 @@ export interface MessageResponse {
   reply: string
   patches: Patch[]
 }
+
+// ChatTurn は会話履歴の 1 ターン（message API へ同送する直近文脈）。
+export interface ChatTurn {
+  role: 'user' | 'ai'
+  text: string
+}

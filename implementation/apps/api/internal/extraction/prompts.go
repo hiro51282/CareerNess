@@ -21,6 +21,9 @@ Your task:
 - If the statement contains no extractable career fact (questions, small talk, meta questions),
   return an empty "extracted_facts" array and use "reply" to answer the user and gently guide
   the conversation toward their career experiences
+- If the latest statement adds detail to a career fact already discussed in the conversation
+  (e.g. the user answers your clarification question), re-emit the complete updated fact and
+  reuse the SAME fact_id_hint so the fact is updated rather than duplicated
 
 Do NOT:
 - Invent or infer facts not stated
@@ -34,9 +37,11 @@ Output ONLY valid JSON matching the provided schema. No markdown, no explanation
 // getUserPrompt returns the user prompt with conversation embedded.
 // SSOT: extraction-specification.md §5 getUserPrompt
 func getUserPrompt(conversation string) string {
-	return fmt.Sprintf(`Chat with the user and extract career facts from this user statement.
+	return fmt.Sprintf(`Chat with the user and extract career facts from this conversation.
 
-User statement:
+Conversation (lines are prefixed with their speaker; the final "user:" line is the latest
+statement to respond to; if no speaker prefixes are present, treat the whole text as a
+single user statement):
 "%s"
 
 Output JSON with structure:

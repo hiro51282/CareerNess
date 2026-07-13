@@ -31,7 +31,9 @@ func (m *MockExtractionProvider) ExtractFacts(ctx context.Context, conversation 
 		return m.ResponseOverride, nil
 	}
 
-	trimmed := strings.TrimSpace(conversation)
+	// 会話履歴付き transcript の場合は最新の user 発言のみを対象にする
+	//（履歴を踏まえた文脈理解は実 AI の責務。mock は決定的に最新発言を扱う）。
+	trimmed := strings.TrimSpace(latestUserStatement(conversation))
 	if trimmed == "" {
 		return &ExtractedFactResult{
 			Reply:          "キャリアについて教えてください。どんな仕事をしてきましたか？（mock）",
@@ -90,6 +92,18 @@ func (m *MockExtractionProvider) ExtractFacts(ctx context.Context, conversation 
 // mock 専用の決定的判定であり、実 AI では LLM 自身が会話/抽出を判断する。
 func isQuestionLike(s string) bool {
 	return strings.HasSuffix(s, "?") || strings.HasSuffix(s, "？")
+}
+
+// latestUserStatement は transcript 形式（"user: "/"assistant: " プレフィクス行）の会話から
+// 最新の user 発言を取り出す。transcript でなければ全体をそのまま返す
+//（/extract の生テキストや履歴なしの単一発言）。
+func latestUserStatement(conversation string) string {
+	s := "\n" + conversation
+	const marker = "\nuser: "
+	if i := strings.LastIndex(s, marker); i >= 0 {
+		return s[i+len(marker):]
+	}
+	return conversation
 }
 
 // Name returns the provider name
