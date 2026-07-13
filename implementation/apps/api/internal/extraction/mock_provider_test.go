@@ -87,7 +87,8 @@ func TestMock_PipelinePasses(t *testing.T) {
 	}
 }
 
-// TestMock_EmptyConversation は空会話で抽出 0 件となり、パイプラインがエラーを返すことを検証する。
+// TestMock_EmptyConversation は空会話で抽出 0 件＋reply となり、
+// パイプラインがエラーにせず会話返信を透過することを検証する（B: 自由対話）。
 func TestMock_EmptyConversation(t *testing.T) {
 	m := NewMockExtractionProvider()
 	res, err := m.ExtractFacts(context.Background(), "   ")
@@ -97,10 +98,33 @@ func TestMock_EmptyConversation(t *testing.T) {
 	if len(res.ExtractedFacts) != 0 {
 		t.Errorf("空会話の facts = %d, want 0", len(res.ExtractedFacts))
 	}
+	if res.Reply == "" {
+		t.Error("facts 0 件時は reply が必須")
+	}
 
 	svc := NewExtractionService(NewMockExtractionProvider())
-	if _, err := svc.ExtractFromConversation(context.Background(), "", "sess-1"); err == nil {
-		t.Error("空会話はパイプラインでエラーになるべき")
+	out, err := svc.ExtractFromConversation(context.Background(), "", "sess-1")
+	if err != nil {
+		t.Fatalf("空会話はエラーにせず reply を返すべき: %v", err)
+	}
+	if len(out.YAMLFacts) != 0 || out.Reply == "" {
+		t.Errorf("facts=%d reply=%q, want facts 0 + reply あり", len(out.YAMLFacts), out.Reply)
+	}
+}
+
+// TestMock_QuestionIsConversational は疑問形の発言が fact 抽出されず、
+// reply のみで会話として扱われることを検証する（no facts extracted エラーの解消）。
+func TestMock_QuestionIsConversational(t *testing.T) {
+	svc := NewExtractionService(NewMockExtractionProvider())
+	out, err := svc.ExtractFromConversation(context.Background(), "他にどんな情報を書けばいいですか？", "sess-1")
+	if err != nil {
+		t.Fatalf("疑問形の発言はエラーにならないべき: %v", err)
+	}
+	if len(out.YAMLFacts) != 0 {
+		t.Errorf("疑問形から fact を抽出すべきでない: %d 件", len(out.YAMLFacts))
+	}
+	if out.Reply == "" {
+		t.Error("疑問形には reply で応答すべき")
 	}
 }
 

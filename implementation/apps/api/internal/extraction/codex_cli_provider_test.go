@@ -52,6 +52,10 @@ func TestCodexCLI_Happy(t *testing.T) {
 	if res.ExtractedFacts[0].FactIDHint != "payment-platform" {
 		t.Errorf("fact_id_hint = %q", res.ExtractedFacts[0].FactIDHint)
 	}
+	// 会話返信 reply も契約の一部としてパースされること（B: 自由対話）
+	if res.Reply == "" {
+		t.Error("reply がパースされていない")
+	}
 	if p.Name() != "codex-cli" {
 		t.Errorf("Name = %q, want codex-cli", p.Name())
 	}

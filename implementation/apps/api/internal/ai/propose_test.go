@@ -77,6 +77,24 @@ func TestPropose_ProducesCanonicalFact(t *testing.T) {
 	}
 }
 
+// TestPropose_ConversationalTurn は非 fact の発言（疑問形）がエラーにならず、
+// patches 空＋会話返信のみで応答することを検証する（B: 自由対話）。
+func TestPropose_ConversationalTurn(t *testing.T) {
+	res, err := Propose(context.Background(), &ProposeRequest{
+		SessionID: "sess-test",
+		Message:   "他にどんな情報を書けばいいですか？",
+	})
+	if err != nil {
+		t.Fatalf("疑問形の発言はエラーにならないべき: %v", err)
+	}
+	if len(res.Patches) != 0 {
+		t.Errorf("patches = %d, want 0（非 fact の発言）", len(res.Patches))
+	}
+	if res.Reply == "" {
+		t.Error("会話返信 reply が空")
+	}
+}
+
 // TestPropose_SummaryTruncation は長い発言が summary 用に短縮されることを確認する。
 func TestPropose_SummaryTruncation(t *testing.T) {
 	long := ""

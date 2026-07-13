@@ -2,7 +2,6 @@ package extraction
 
 import (
 	"context"
-	"fmt"
 )
 
 // ExtractionProvider は会話からの fact 抽出を担当する provider の interface
@@ -68,11 +67,10 @@ func (s *ExtractionService) ExtractFromConversation(
 		yamlFacts = append(yamlFacts, yamlFact)
 	}
 
-	if len(yamlFacts) == 0 {
-		return nil, fmt.Errorf("no facts could be extracted from conversation")
-	}
-
+	// 抽出 0 件は正常（非 fact の発言では reply のみで会話を継続する）。
+	// 0 件時の reply 必須は ValidateAPIResult が保証済み。
 	return &ExtractionPipelineResult{
+		Reply:             apiResult.Reply,
 		ExtractionQuality: apiResult.ExtractionQuality,
 		YAMLFacts:         yamlFacts,
 	}, nil

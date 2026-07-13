@@ -34,12 +34,28 @@ func (m *MockExtractionProvider) ExtractFacts(ctx context.Context, conversation 
 	trimmed := strings.TrimSpace(conversation)
 	if trimmed == "" {
 		return &ExtractedFactResult{
+			Reply:          "キャリアについて教えてください。どんな仕事をしてきましたか？（mock）",
 			ExtractedFacts: []ExtractedFact{},
 			ExtractionQuality: ExtractionQuality{
 				OverallConfidence:       "low",
 				Completeness:            "low",
 				NeedsClarificationCount: 0,
 				Summary:                 "Empty conversation",
+			},
+		}, nil
+	}
+
+	// 疑問形の発言は fact ではなく会話として扱い、reply のみ返す（facts 0 件）。
+	// 質問への実回答は実 AI（codex-cli）の責務であり、mock は決定的な聞き返しに留める。
+	if isQuestionLike(trimmed) {
+		return &ExtractedFactResult{
+			Reply: "（mock）ご質問ですね。実 AI では内容に回答します。担当した仕事・成果・スキルについて話していただくと、fact 候補を提案できます。",
+			ExtractedFacts: []ExtractedFact{},
+			ExtractionQuality: ExtractionQuality{
+				OverallConfidence:       "low",
+				Completeness:            "low",
+				NeedsClarificationCount: 0,
+				Summary:                 "No extractable fact (conversational input)",
 			},
 		}, nil
 	}
@@ -59,6 +75,7 @@ func (m *MockExtractionProvider) ExtractFacts(ctx context.Context, conversation 
 	}
 
 	return &ExtractedFactResult{
+		Reply:          "（mock）発言から fact 候補を 1 件抽出しました。内容を確認して承認または却下してください。",
 		ExtractedFacts: []ExtractedFact{fact},
 		ExtractionQuality: ExtractionQuality{
 			OverallConfidence:       "low",
@@ -67,6 +84,12 @@ func (m *MockExtractionProvider) ExtractFacts(ctx context.Context, conversation 
 			Summary:                 "Mock extraction from conversation",
 		},
 	}, nil
+}
+
+// isQuestionLike は発言が疑問形（質問・聞き返し）かを判定する簡易ヒューリスティック。
+// mock 専用の決定的判定であり、実 AI では LLM 自身が会話/抽出を判断する。
+func isQuestionLike(s string) bool {
+	return strings.HasSuffix(s, "?") || strings.HasSuffix(s, "？")
 }
 
 // Name returns the provider name

@@ -1,8 +1,11 @@
 package extraction
 
-// ExtractedFactResult は Claude API から返される構造化出力
+// ExtractedFactResult は AI から返される構造化出力
 type ExtractedFactResult struct {
-	ExtractedFacts    []ExtractedFact   `json:"extracted_facts"`
+	// Reply はユーザーへの会話返信。extracted_facts が 0 件の場合は必須
+	//（非 fact の発言には reply で応答し、会話を継続する。extraction-specification.md）。
+	Reply             string            `json:"reply,omitempty"`
+	ExtractedFacts    []ExtractedFact   `json:"extracted_facts"` // 0 件を許容
 	ExtractionQuality ExtractionQuality `json:"extraction_quality"`
 }
 
@@ -38,6 +41,8 @@ type ExtractionQuality struct {
 // patch 生成は patch パッケージ（patch.BuildFactUpsert）の責務であり、
 // import 循環を避けるため本パッケージは patch を持たない。
 type ExtractionPipelineResult struct {
+	// Reply は AI の会話返信（provider の reply を透過）。facts 0 件時の応答に使う。
+	Reply             string            `json:"reply,omitempty"`
 	ExtractionQuality ExtractionQuality `json:"extraction_quality"`
 	YAMLFacts         []*YAMLFact       `json:"yaml_facts"`
 }
