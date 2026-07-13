@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react'
-import { sendMessage } from '../../api/client'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { sendMessage, getAIStatus, type AIStatus } from '../../api/client'
 import { useWorkspace } from '../workspace/useWorkspace'
 import type { Patch } from '../../types/patch'
 
@@ -27,10 +27,21 @@ export function ChatView({ onPatchesProposed }: Props) {
   const [sessionId] = useState(() => `sess-${Date.now()}`)
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [aiStatus, setAiStatus] = useState<AIStatus | null>(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  // AI 状態はハイブリッド方式: 起動時 1 回＋「再確認」ボタン＋送信エラー時に再取得。
+  // 毎メッセージの事前チェックはしない（外部プロセス起動のコストと冗長性のため）。
+  const refreshAIStatus = useCallback(() => {
+    getAIStatus().then(setAiStatus).catch(() => setAiStatus(null))
+  }, [])
+
+  useEffect(() => {
+    refreshAIStatus()
+  }, [refreshAIStatus])
 
   async function handleSend() {
     const text = input.trim()
@@ -59,6 +70,8 @@ export function ChatView({ onPatchesProposed }: Props) {
       }
     } catch (e) {
       setMessages(prev => [...prev, { role: 'ai', text: `エラーが発生しました: ${String(e)}` }])
+      // 認証切れ等で状態が変わった可能性があるため、AI 状態を再取得してバナーを最新化する。
+      refreshAIStatus()
     } finally {
       setLoading(false)
     }
@@ -80,6 +93,20 @@ export function ChatView({ onPatchesProposed }: Props) {
 
   return (
     <div style={styles.container}>
+      {aiStatus && (
+        <div style={styles.statusBar}>
+          <span style={{ ...styles.statusBadge, ...(aiStatus.ready ? styles.statusOk : styles.statusWarn) }}>
+            AI: {aiStatus.provider === 'mock' ? 'Mock（開発用）' : aiStatus.provider}
+            {aiStatus.ready ? '' : ' ⚠'}
+          </span>
+          {aiStatus.guidance && (
+            <>
+              <span style={styles.statusGuidance}>{aiStatus.guidance}</span>
+              <button style={styles.statusRefresh} onClick={refreshAIStatus}>再確認</button>
+            </>
+          )}
+        </div>
+      )}
       <div style={styles.messages}>
         {messages.map((m, i) => (
           <div key={i} style={{ ...styles.bubble, ...(m.role === 'user' ? styles.userBubble : styles.aiBubble) }}>
@@ -143,6 +170,34 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     height: '100%',
     gap: 0,
+  },
+  statusBar: {
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    padding: '6px 20px',
+    borderBottom: '1px solid #eee',
+    background: '#fafafa',
+    fontSize: 12,
+    flexShrink: 0,
+  },
+  statusBadge: {
+    fontWeight: 700,
+    padding: '2px 8px',
+    borderRadius: 10,
+  },
+  statusOk: { color: '#166534', background: '#dcfce7' },
+  statusWarn: { color: '#92400e', background: '#fef3c7' },
+  statusGuidance: { color: '#92400e', flex: 1, minWidth: 200, lineHeight: 1.5 },
+  statusRefresh: {
+    fontSize: 12,
+    padding: '3px 10px',
+    border: '1px solid #d97706',
+    color: '#92400e',
+    background: '#fff',
+    borderRadius: 6,
+    cursor: 'pointer',
   },
   messages: {
     flex: 1,

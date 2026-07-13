@@ -27,6 +27,20 @@ export async function sendMessage(params: {
   return res.json()
 }
 
+// AIStatus は AI 実行環境の利用可否（オンボーディング用）。
+export interface AIStatus {
+  provider: string
+  ready: boolean
+  detail: string
+  guidance?: string
+}
+
+export async function getAIStatus(): Promise<AIStatus> {
+  const res = await fetch(`${BASE}/ai/status`)
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return res.json()
+}
+
 export async function validatePatch(patch: Patch): Promise<void> {
   const res = await fetch(`${BASE}/patches/validate`, {
     method: 'POST',
