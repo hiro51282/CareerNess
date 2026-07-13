@@ -42,6 +42,8 @@ export interface Patch {
 
 export interface MessageResponse {
   reply: string
+  // AI の聞き返し（clarification questions の集約）。チップとして表示する。
+  clarifications?: string[]
   patches: Patch[]
 }
 

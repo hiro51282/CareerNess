@@ -82,6 +82,10 @@ func TestMock_PipelinePasses(t *testing.T) {
 	if !strings.HasPrefix(f.FactID, "fact-proj-") {
 		t.Errorf("fact_id = %q, want fact-proj- 始まり", f.FactID)
 	}
+	// 既定 mock は clarification を 1 件返す（UI チップの開発時確認用）
+	if len(res.Clarifications) != 1 {
+		t.Errorf("clarifications = %d, want 1", len(res.Clarifications))
+	}
 	if _, err := time.Parse(time.RFC3339, f.CreatedAt); err != nil {
 		t.Errorf("created_at が RFC3339 でない: %q (%v)", f.CreatedAt, err)
 	}
@@ -143,6 +147,36 @@ func TestMock_Override(t *testing.T) {
 	}
 	if len(res.ExtractedFacts) != 1 || res.ExtractedFacts[0].Type != "skill" {
 		t.Errorf("override が反映されていない: %+v", res.ExtractedFacts)
+	}
+}
+
+// TestPipeline_AggregatesClarifications は複数 fact の clarification_questions が
+// 重複除去・順序維持で集約されることを検証する（C1）。
+func TestPipeline_AggregatesClarifications(t *testing.T) {
+	m := NewMockExtractionProvider()
+	m.SetResponse(&ExtractedFactResult{
+		Reply: "確認させてください",
+		ExtractedFacts: []ExtractedFact{
+			{Type: "skill", FactIDHint: "go", Summary: "Go", Description: "d", Confidence: "high",
+				ClarificationQuestions: []string{"期間を教えてください", "役割を教えてください"}},
+			{Type: "skill", FactIDHint: "k8s", Summary: "K8s", Description: "d", Confidence: "high",
+				ClarificationQuestions: []string{"期間を教えてください", "  ", "規模を教えてください"}},
+		},
+		ExtractionQuality: ExtractionQuality{OverallConfidence: "high"},
+	})
+
+	out, err := NewExtractionService(m).ExtractFromConversation(context.Background(), "x", "s")
+	if err != nil {
+		t.Fatalf("ExtractFromConversation error: %v", err)
+	}
+	want := []string{"期間を教えてください", "役割を教えてください", "規模を教えてください"}
+	if len(out.Clarifications) != len(want) {
+		t.Fatalf("clarifications = %v, want %v", out.Clarifications, want)
+	}
+	for i, q := range want {
+		if out.Clarifications[i] != q {
+			t.Errorf("clarifications[%d] = %q, want %q", i, out.Clarifications[i], q)
+		}
 	}
 }
 

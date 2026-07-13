@@ -77,6 +77,11 @@ func TestPropose_ProducesCanonicalFact(t *testing.T) {
 	if err := patch.Validate(p0); err != nil {
 		t.Fatalf("Propose が不正な patch を生成: %v", err)
 	}
+
+	// clarification が一級要素として透過されること（既定 mock は 1 件返す）
+	if len(res.Clarifications) != 1 {
+		t.Errorf("clarifications = %d, want 1", len(res.Clarifications))
+	}
 }
 
 // TestPropose_ConversationalTurn は非 fact の発言（疑問形）がエラーにならず、

@@ -31,8 +31,11 @@ type ProposeRequest struct {
 // ProposeResult は AI が返す提案結果。
 // 1 会話ターンから複数 fact が抽出され得るため、patch は複数返す（1 patch = 1 fact）。
 type ProposeResult struct {
-	Reply   string         `json:"reply"`
-	Patches []*patch.Patch `json:"patches"`
+	Reply string `json:"reply"`
+	// Clarifications は AI の聞き返し（全 fact の clarification_questions の集約）。
+	// UI はチップ等の一級要素として表示し、回答は履歴付きの次ターンで fact を enrich する。
+	Clarifications []string       `json:"clarifications,omitempty"`
+	Patches        []*patch.Patch `json:"patches"`
 }
 
 // Propose はユーザーの発言を受けて patch proposal を生成する。
@@ -80,7 +83,7 @@ func Propose(ctx context.Context, req *ProposeRequest) (*ProposeResult, error) {
 		}
 	}
 
-	return &ProposeResult{Reply: reply, Patches: patches}, nil
+	return &ProposeResult{Reply: reply, Clarifications: result.Clarifications, Patches: patches}, nil
 }
 
 // truncateRunes は文字列を rune 単位で n 文字に切り詰め、超過時は省略記号を付ける。

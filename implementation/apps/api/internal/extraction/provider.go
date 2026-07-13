@@ -2,6 +2,7 @@ package extraction
 
 import (
 	"context"
+	"strings"
 )
 
 // ExtractionProvider は会話からの fact 抽出を担当する provider の interface
@@ -71,7 +72,27 @@ func (s *ExtractionService) ExtractFromConversation(
 	// 0 件時の reply 必須は ValidateAPIResult が保証済み。
 	return &ExtractionPipelineResult{
 		Reply:             apiResult.Reply,
+		Clarifications:    collectClarifications(apiResult.ExtractedFacts),
 		ExtractionQuality: apiResult.ExtractionQuality,
 		YAMLFacts:         yamlFacts,
 	}, nil
+}
+
+// collectClarifications は全 fact の clarification_questions を集約する
+//（重複除去・元の順序維持・空要素はスキップ）。source_detail への埋め込みとは別に、
+// UI が「AI の聞き返し」を一級要素として扱えるようにするための構造。
+func collectClarifications(facts []ExtractedFact) []string {
+	var out []string
+	seen := map[string]bool{}
+	for _, f := range facts {
+		for _, q := range f.ClarificationQuestions {
+			q = strings.TrimSpace(q)
+			if q == "" || seen[q] {
+				continue
+			}
+			seen[q] = true
+			out = append(out, q)
+		}
+	}
+	return out
 }
