@@ -2,6 +2,8 @@ package ai
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"testing"
 
 	"careerness/api/internal/extraction"
@@ -92,6 +94,79 @@ func TestPropose_ConversationalTurn(t *testing.T) {
 	}
 	if res.Reply == "" {
 		t.Error("会話返信 reply が空")
+	}
+}
+
+// TestBuildTranscript は会話 transcript 組み立ての純関数を検証する。
+func TestBuildTranscript(t *testing.T) {
+	// 履歴なし → 最新発言をそのまま（従来挙動）
+	if got := buildTranscript(nil, "こんにちは"); got != "こんにちは" {
+		t.Errorf("履歴なし = %q, want こんにちは", got)
+	}
+
+	// 形式・順序・role マッピング（ai → assistant）・改行の畳み込み
+	history := []ChatTurn{
+		{Role: "user", Text: "ABC社で\nGo移行をしました"},
+		{Role: "ai", Text: "期間を教えてください"},
+	}
+	got := buildTranscript(history, "2024年4月から12月です")
+	want := "user: ABC社で Go移行をしました\nassistant: 期間を教えてください\nuser: 2024年4月から12月です"
+	if got != want {
+		t.Errorf("transcript = %q, want %q", got, want)
+	}
+
+	// 空テキストのターンはスキップ
+	got = buildTranscript([]ChatTurn{{Role: "user", Text: "  "}}, "最新")
+	if got != "最新" {
+		t.Errorf("空履歴のみ = %q, want 最新", got)
+	}
+
+	// ターン数上限: 直近 maxHistoryTurns 件のみ
+	var many []ChatTurn
+	for i := range 20 {
+		many = append(many, ChatTurn{Role: "user", Text: fmt.Sprintf("t%02d", i)})
+	}
+	got = buildTranscript(many, "最新")
+	if strings.Contains(got, "t09") || !strings.Contains(got, "t10") {
+		t.Errorf("直近 %d 件に制限されるべき: %q", maxHistoryTurns, got)
+	}
+
+	// 文字数上限: 古いターンから削られ、直近は残る
+	long := strings.Repeat("あ", 3000)
+	got = buildTranscript([]ChatTurn{
+		{Role: "user", Text: long},
+		{Role: "user", Text: long},
+		{Role: "user", Text: "直近の発言"},
+	}, "最新")
+	if !strings.Contains(got, "直近の発言") {
+		t.Error("直近ターンは文字数上限後も残るべき")
+	}
+	if len(got) > maxHistoryChars+len("\nuser: 最新")+16 {
+		t.Errorf("文字数上限を超過: %d", len(got))
+	}
+}
+
+// TestPropose_HistoryKeepsFactClean は履歴付きでも fact が最新発言から
+// 組み立てられる（transcript が description を汚さない）ことを検証する（mock 経路）。
+func TestPropose_HistoryKeepsFactClean(t *testing.T) {
+	latest := "2024年にXYZ社で監視基盤をDatadogへ移行した"
+	res, err := Propose(context.Background(), &ProposeRequest{
+		SessionID: "sess-test",
+		Message:   latest,
+		History: []ChatTurn{
+			{Role: "user", Text: "こんにちは"},
+			{Role: "ai", Text: "キャリアについて教えてください"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("Propose error: %v", err)
+	}
+	if len(res.Patches) != 1 {
+		t.Fatalf("patches = %d, want 1", len(res.Patches))
+	}
+	fact := res.Patches[0].Operations[0].Change.After.(*extraction.YAMLFact)
+	if fact.Description != latest {
+		t.Errorf("description が transcript で汚染: %q", fact.Description)
 	}
 }
 

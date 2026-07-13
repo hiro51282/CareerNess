@@ -41,7 +41,11 @@ export function ChatView({ onPatchesProposed }: Props) {
       const workspaceFiles: Record<string, string> = {}
       files.forEach((content, path) => { workspaceFiles[path] = content })
 
-      const result = await sendMessage({ sessionId, workspaceId, message: text, workspaceFiles })
+      // 直近の会話履歴を同送する（この時点の messages は今回の発言を含まない＝履歴そのもの）。
+      // 上限はバックエンド側でも制限されるが、送信量も直近 10 ターンに抑える。
+      const history = messages.slice(-10).map(m => ({ role: m.role, text: m.text }))
+
+      const result = await sendMessage({ sessionId, workspaceId, message: text, history, workspaceFiles })
       setMessages(prev => [...prev, { role: 'ai', text: result.reply, patches: result.patches }])
       if (result.patches?.length) {
         onPatchesProposed(result.patches)

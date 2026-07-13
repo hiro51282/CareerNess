@@ -13,11 +13,18 @@ import (
 	"careerness/api/internal/patch"
 )
 
+// ChatTurn は会話履歴の 1 ターン。
+type ChatTurn struct {
+	Role string `json:"role"` // "user" | それ以外は assistant として扱う
+	Text string `json:"text"`
+}
+
 // ProposeRequest はパッチ提案の生成に必要な入力。
 type ProposeRequest struct {
 	SessionID      string            `json:"session_id"`
 	WorkspaceID    string            `json:"workspace_id"`
 	Message        string            `json:"message"`
+	History        []ChatTurn        `json:"history,omitempty"` // 直近の会話履歴（任意）
 	WorkspaceFiles map[string]string `json:"workspace_files"`
 }
 
@@ -40,8 +47,12 @@ func Propose(ctx context.Context, req *ProposeRequest) (*ProposeResult, error) {
 		return nil, fmt.Errorf("extraction provider の初期化に失敗: %w", err)
 	}
 
+	// 会話履歴があれば transcript（末尾 user: が最新発言）として渡す。
+	// これにより clarification への回答が既出 fact の更新（同一 fact_id_hint 再利用）に繋がる。
+	conversation := buildTranscript(req.History, req.Message)
+
 	result, err := extraction.NewExtractionService(provider).
-		ExtractFromConversation(ctx, req.Message, req.SessionID)
+		ExtractFromConversation(ctx, conversation, req.SessionID)
 	if err != nil {
 		return nil, err
 	}
@@ -78,6 +89,57 @@ func truncateRunes(s string, n int) string {
 		return s
 	}
 	return string([]rune(s)[:n]) + "…"
+}
+
+// 履歴の上限。prompt の肥大（レイテンシ/コスト）を抑えるため、
+// 直近ターン数と文字数の両方で制限する。
+const (
+	maxHistoryTurns = 10
+	maxHistoryChars = 4000
+)
+
+// buildTranscript は会話履歴＋最新発言から transcript を組み立てる純関数。
+// 形式は extraction-specification.md の会話拡張に従う:
+//
+//	user: ...
+//	assistant: ...
+//	user: <最新発言>
+//
+// 履歴が無い場合は最新発言をそのまま返す（従来挙動・単一発言）。
+// 履歴の各ターンは改行を潰して 1 行に収め、古いターンから上限で切り捨てる。
+func buildTranscript(history []ChatTurn, latest string) string {
+	if len(history) == 0 {
+		return latest
+	}
+	turns := history
+	if len(turns) > maxHistoryTurns {
+		turns = turns[len(turns)-maxHistoryTurns:]
+	}
+
+	lines := make([]string, 0, len(turns))
+	total := 0
+	for _, t := range turns {
+		text := strings.TrimSpace(strings.ReplaceAll(t.Text, "\n", " "))
+		if text == "" {
+			continue
+		}
+		role := "assistant"
+		if t.Role == "user" {
+			role = "user"
+		}
+		line := role + ": " + text
+		lines = append(lines, line)
+		total += len(line) + 1
+	}
+	// 文字数上限は古いターンから削って満たす（直近の文脈を優先）。
+	for len(lines) > 0 && total > maxHistoryChars {
+		total -= len(lines[0]) + 1
+		lines = lines[1:]
+	}
+	if len(lines) == 0 {
+		return latest
+	}
+	return strings.Join(lines, "\n") + "\nuser: " + latest
 }
 
 func buildReply(message string, fileCount int) string {

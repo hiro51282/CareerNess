@@ -146,6 +146,39 @@ func TestMock_Override(t *testing.T) {
 	}
 }
 
+// TestLatestUserStatement は transcript から最新 user 発言を取り出すヘルパを検証する。
+func TestLatestUserStatement(t *testing.T) {
+	cases := []struct{ name, in, want string }{
+		{"単一発言（transcript でない）", "ABCでGo移行をした", "ABCでGo移行をした"},
+		{"履歴付き transcript", "user: こんにちは\nassistant: 教えてください\nuser: 2024年に移行した", "2024年に移行した"},
+		{"最新発言が複数行", "user: こんにちは\nuser: 一行目\n二行目", "一行目\n二行目"},
+		{"先頭が user: で始まる単独", "user: 最初の発言", "最初の発言"},
+	}
+	for _, tc := range cases {
+		if got := latestUserStatement(tc.in); got != tc.want {
+			t.Errorf("%s: latestUserStatement(%q) = %q, want %q", tc.name, tc.in, got, tc.want)
+		}
+	}
+}
+
+// TestMock_TranscriptUsesLatest は transcript 入力でも mock が最新発言から
+// fact を組み立てることを検証する。
+func TestMock_TranscriptUsesLatest(t *testing.T) {
+	m := NewMockExtractionProvider()
+	transcript := "user: こんにちは\nassistant: キャリアを教えてください\nuser: 2024年にXYZ社で移行をリードした"
+
+	res, err := m.ExtractFacts(context.Background(), transcript)
+	if err != nil {
+		t.Fatalf("ExtractFacts error: %v", err)
+	}
+	if len(res.ExtractedFacts) != 1 {
+		t.Fatalf("facts = %d, want 1", len(res.ExtractedFacts))
+	}
+	if got := res.ExtractedFacts[0].Description; got != "2024年にXYZ社で移行をリードした" {
+		t.Errorf("description = %q（transcript 全体でなく最新発言であるべき）", got)
+	}
+}
+
 // TestMock_SummaryTruncated は長い発言で summary が省略されることを検証する。
 func TestMock_SummaryTruncated(t *testing.T) {
 	m := NewMockExtractionProvider()
