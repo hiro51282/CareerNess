@@ -45,11 +45,7 @@ func Propose(ctx context.Context, req *ProposeRequest) (*ProposeResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(result.YAMLFacts) == 0 {
-		// ExtractFromConversation は 0 件で error を返す契約だが、防御的に確認する。
-		return nil, fmt.Errorf("会話から fact を抽出できませんでした")
-	}
-
+	// 抽出 0 件は正常（非 fact の発言）。patches 空＋会話返信のみで応答する。
 	// 抽出された全 fact を patch 提案化する（1 patch = 1 fact、extract 経路と同じ組み立て）。
 	patches := make([]*patch.Patch, 0, len(result.YAMLFacts))
 	for i, fact := range result.YAMLFacts {
@@ -61,7 +57,17 @@ func Propose(ctx context.Context, req *ProposeRequest) (*ProposeResult, error) {
 		patches = append(patches, p)
 	}
 
-	reply := buildReply(req.Message, len(req.WorkspaceFiles))
+	// AI の会話返信を採用する。空の場合のフォールバック:
+	// facts あり → 従来の定型文（提案の確認を促す）、facts なし → キャリアの話への誘導。
+	// （0 件時の reply 必須は ValidateAPIResult が保証するため、後者は防御的措置）
+	reply := strings.TrimSpace(result.Reply)
+	if reply == "" {
+		if len(patches) > 0 {
+			reply = buildReply(req.Message, len(req.WorkspaceFiles))
+		} else {
+			reply = "承知しました。担当した仕事・成果・スキルについて教えていただくと、fact 候補を提案できます。"
+		}
+	}
 
 	return &ProposeResult{Reply: reply, Patches: patches}, nil
 }

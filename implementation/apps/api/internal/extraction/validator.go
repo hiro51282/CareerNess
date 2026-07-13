@@ -11,8 +11,10 @@ func ValidateAPIResult(result *ExtractedFactResult) error {
 		return fmt.Errorf("nil result")
 	}
 
-	if len(result.ExtractedFacts) == 0 {
-		return fmt.Errorf("no facts extracted")
+	// 抽出 0 件は正常（非 fact の発言）。ただしその場合は会話返信 reply が必須で、
+	// facts も reply も無い応答は契約違反とする（extraction-specification.md）。
+	if len(result.ExtractedFacts) == 0 && strings.TrimSpace(result.Reply) == "" {
+		return fmt.Errorf("empty result: no facts extracted and no reply")
 	}
 
 	for i, fact := range result.ExtractedFacts {

@@ -18,7 +18,20 @@ func TestValidateAPIResult(t *testing.T) {
 			errMsg:  "nil result",
 		},
 		{
-			name: "no facts extracted",
+			// B（自由対話）: 0 件でも reply があれば正常（会話としての応答）
+			name: "no facts but reply present (valid)",
+			result: &ExtractedFactResult{
+				Reply:          "ご質問ですね。キャリアについて教えてください。",
+				ExtractedFacts: []ExtractedFact{},
+				ExtractionQuality: ExtractionQuality{
+					OverallConfidence: "high",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			// facts も reply も無い応答は契約違反
+			name: "no facts and no reply (invalid)",
 			result: &ExtractedFactResult{
 				ExtractedFacts: []ExtractedFact{},
 				ExtractionQuality: ExtractionQuality{
@@ -26,7 +39,7 @@ func TestValidateAPIResult(t *testing.T) {
 				},
 			},
 			wantErr: true,
-			errMsg:  "no facts extracted",
+			errMsg:  "empty result",
 		},
 		{
 			name: "valid single fact",

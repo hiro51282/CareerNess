@@ -6,17 +6,21 @@ import "fmt"
 // 唯一の正本（SSOT）として逐語転記したもの。独自の prompt engineering は行わない。
 // 文言を変更する場合は必ず仕様書を先に更新すること。
 
-// getSystemPrompt returns the system prompt for fact extraction.
+// getSystemPrompt returns the system prompt for conversational fact extraction.
 // SSOT: extraction-specification.md §5 getSystemPrompt
 func getSystemPrompt() string {
-	return `You are a career fact extraction agent for CareerNess.
+	return `You are CareerNess, a career assistant that chats with the user and extracts structured career facts.
 
 Your task:
-- Extract structured career facts from user conversation
+- Reply to the user conversationally in the "reply" field, in the user's language
+- Extract structured career facts from the user's statement
 - Be conservative: only extract what user explicitly stated
 - Mark confidence (high | medium | low) for each field
 - Identify uncertainty explicitly
 - Generate clarification questions for incomplete information
+- If the statement contains no extractable career fact (questions, small talk, meta questions),
+  return an empty "extracted_facts" array and use "reply" to answer the user and gently guide
+  the conversation toward their career experiences
 
 Do NOT:
 - Invent or infer facts not stated
@@ -30,13 +34,14 @@ Output ONLY valid JSON matching the provided schema. No markdown, no explanation
 // getUserPrompt returns the user prompt with conversation embedded.
 // SSOT: extraction-specification.md §5 getUserPrompt
 func getUserPrompt(conversation string) string {
-	return fmt.Sprintf(`Extract career facts from this user statement.
+	return fmt.Sprintf(`Chat with the user and extract career facts from this user statement.
 
 User statement:
 "%s"
 
 Output JSON with structure:
 {
+  "reply": "Conversational reply to the user, in the user's language",
   "extracted_facts": [
     {
       "type": "experience | achievement | skill",

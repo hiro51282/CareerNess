@@ -55,6 +55,35 @@ func TestPostMessage_DefaultMock(t *testing.T) {
 	}
 }
 
+// TestPostMessage_ConversationalTurn は非 fact の発言（疑問形）が 200 で
+// reply のみ（patches 0 件）を返すことを検証する（B: 自由対話）。
+func TestPostMessage_ConversationalTurn(t *testing.T) {
+	t.Setenv("EXTRACTION_PROVIDER", "") // 既定 = mock
+
+	body := `{"session_id":"sess-x","message":"他にどんな情報を書けばいいですか？"}`
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/conversations/message", strings.NewReader(body))
+	rec := httptest.NewRecorder()
+
+	PostMessage(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200; body=%s", rec.Code, rec.Body.String())
+	}
+	var resp struct {
+		Reply   string           `json:"reply"`
+		Patches []map[string]any `json:"patches"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("レスポンス解析失敗: %v", err)
+	}
+	if resp.Reply == "" {
+		t.Error("会話返信 reply が空")
+	}
+	if len(resp.Patches) != 0 {
+		t.Errorf("patches = %d, want 0（非 fact の発言）", len(resp.Patches))
+	}
+}
+
 func TestPostMessage_EmptyMessage(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/conversations/message", strings.NewReader(`{"message":"  "}`))
 	rec := httptest.NewRecorder()

@@ -9,6 +9,13 @@
 > **OpenAI SDK を使った実装に差し替える** 必要がある。
 > コード例の他の部分（pipeline 構造、validation、normalization）は引き続き有効。
 
+> **[拡張 2026-07-06] 会話返信（reply）の追加**  
+> チャットを「抽出専用」から「会話しながら抽出する」へ拡張した。AI 出力契約
+> （`ExtractedFactResult`）に **`reply`（ユーザーへの会話返信）** を追加し、
+> **`extracted_facts` は 0 件を許容**する（0 件の場合は `reply` 必須）。
+> 非 fact の発言（質問・雑談）には `reply` で応答し、キャリアの話へ誘導する。
+> fact 捏造禁止の原則は不変。§3 の型定義と §5 の prompt はこの契約が正。
+
 AI が user との会話からキャリア fact を抽出し、patch proposal を生成するための Go ベースの仕様。
 
 **Philosophy**: LLM を「structured JSON extraction provider」として扱い、extraction output を Go struct に deserialize → validate → normalize → patch generation する deterministic pipeline。AI provider は OpenAI Codex（ユーザー自身のアカウント）を使用する（ADR-004）。
@@ -77,9 +84,12 @@ implementation/apps/api/
 ```go
 package extraction
 
-// ExtractedFactResult は Claude API から返される構造化出力
+// ExtractedFactResult は AI から返される構造化出力
 type ExtractedFactResult struct {
-	ExtractedFacts     []ExtractedFact `json:"extracted_facts"`
+	// Reply はユーザーへの会話返信。extracted_facts が 0 件の場合は必須
+	//（非 fact の発言には reply で応答し、会話を継続する）。
+	Reply              string          `json:"reply,omitempty"`
+	ExtractedFacts     []ExtractedFact `json:"extracted_facts"` // 0 件を許容
 	ExtractionQuality  ExtractionQuality `json:"extraction_quality"`
 }
 
@@ -494,16 +504,20 @@ func joinLines(lines []string) string {
 ```go
 package extraction
 
-// getSystemPrompt returns the system prompt for fact extraction
+// getSystemPrompt returns the system prompt for conversational fact extraction
 func getSystemPrompt() string {
-	return `You are a career fact extraction agent for CareerNess.
+	return `You are CareerNess, a career assistant that chats with the user and extracts structured career facts.
 
 Your task:
-- Extract structured career facts from user conversation
+- Reply to the user conversationally in the "reply" field, in the user's language
+- Extract structured career facts from the user's statement
 - Be conservative: only extract what user explicitly stated
 - Mark confidence (high | medium | low) for each field
 - Identify uncertainty explicitly
 - Generate clarification questions for incomplete information
+- If the statement contains no extractable career fact (questions, small talk, meta questions),
+  return an empty "extracted_facts" array and use "reply" to answer the user and gently guide
+  the conversation toward their career experiences
 
 Do NOT:
 - Invent or infer facts not stated
@@ -516,13 +530,14 @@ Output ONLY valid JSON matching the provided schema. No markdown, no explanation
 
 // getUserPrompt returns the user prompt with conversation
 func getUserPrompt(conversation string) string {
-	return fmt.Sprintf(`Extract career facts from this user statement.
+	return fmt.Sprintf(`Chat with the user and extract career facts from this user statement.
 
 User statement:
 "%s"
 
 Output JSON with structure:
 {
+  "reply": "Conversational reply to the user, in the user's language",
   "extracted_facts": [
     {
       "type": "experience | achievement | skill",

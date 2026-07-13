@@ -14,6 +14,7 @@ import (
 
 // validExtractionJSON は OpenAI の message.content に入る妥当な抽出 JSON。
 const validExtractionJSON = `{
+  "reply": "決済基盤の移行について確認しました。",
   "extracted_facts": [
     {
       "type": "experience",
