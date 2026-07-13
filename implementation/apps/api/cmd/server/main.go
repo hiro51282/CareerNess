@@ -19,6 +19,7 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(`{"status":"ok"}`))
 	})
+	mux.HandleFunc("/api/v1/ai/status", handler.GetAIStatus)
 	mux.HandleFunc("/api/v1/conversations/message", handler.PostMessage)
 	mux.HandleFunc("/api/v1/patches/validate", handler.PostValidatePatch)
 	mux.HandleFunc("/api/v1/extract", handler.PostExtract)
