@@ -42,7 +42,10 @@ type ExtractionQuality struct {
 // import 循環を避けるため本パッケージは patch を持たない。
 type ExtractionPipelineResult struct {
 	// Reply は AI の会話返信（provider の reply を透過）。facts 0 件時の応答に使う。
-	Reply             string            `json:"reply,omitempty"`
+	Reply string `json:"reply,omitempty"`
+	// Clarifications は全 fact の clarification_questions の集約（重複除去・順序維持）。
+	// source_detail への埋め込み（normalizer）とは別に、UI が一級要素として扱うための構造。
+	Clarifications    []string          `json:"clarifications,omitempty"`
 	ExtractionQuality ExtractionQuality `json:"extraction_quality"`
 	YAMLFacts         []*YAMLFact       `json:"yaml_facts"`
 }

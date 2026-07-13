@@ -74,6 +74,10 @@ func (m *MockExtractionProvider) ExtractFacts(ctx context.Context, conversation 
 		ExtractionNotes: []string{
 			"Mock extraction (not a real LLM call). Set EXTRACTION_PROVIDER=codex for real extraction.",
 		},
+		// UI の clarification チップを既定 mock でも確認できるよう決定的に 1 件返す。
+		ClarificationQuestions: []string{
+			"この経験の期間（開始月・終了月）を教えてください（mock）",
+		},
 	}
 
 	return &ExtractedFactResult{
@@ -82,7 +86,7 @@ func (m *MockExtractionProvider) ExtractFacts(ctx context.Context, conversation 
 		ExtractionQuality: ExtractionQuality{
 			OverallConfidence:       "low",
 			Completeness:            "low",
-			NeedsClarificationCount: 0,
+			NeedsClarificationCount: 1,
 			Summary:                 "Mock extraction from conversation",
 		},
 	}, nil

@@ -7,6 +7,7 @@ interface Message {
   role: 'user' | 'ai'
   text: string
   patches?: Patch[]
+  clarifications?: string[]
 }
 
 interface Props {
@@ -25,6 +26,7 @@ export function ChatView({ onPatchesProposed }: Props) {
   const [loading, setLoading] = useState(false)
   const [sessionId] = useState(() => `sess-${Date.now()}`)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -46,7 +48,12 @@ export function ChatView({ onPatchesProposed }: Props) {
       const history = messages.slice(-10).map(m => ({ role: m.role, text: m.text }))
 
       const result = await sendMessage({ sessionId, workspaceId, message: text, history, workspaceFiles })
-      setMessages(prev => [...prev, { role: 'ai', text: result.reply, patches: result.patches }])
+      setMessages(prev => [...prev, {
+        role: 'ai',
+        text: result.reply,
+        patches: result.patches,
+        clarifications: result.clarifications,
+      }])
       if (result.patches?.length) {
         onPatchesProposed(result.patches)
       }
@@ -64,6 +71,13 @@ export function ChatView({ onPatchesProposed }: Props) {
     }
   }
 
+  // 質問チップのタップで入力欄に Q/A テンプレをプリフィルし、回答を促す。
+  // 回答は履歴付きの次ターンで送られ、同じ fact の enrich（C2）につながる。
+  function handleClarificationTap(question: string) {
+    setInput(`Q. ${question}\nA. `)
+    textareaRef.current?.focus()
+  }
+
   return (
     <div style={styles.container}>
       <div style={styles.messages}>
@@ -71,6 +85,20 @@ export function ChatView({ onPatchesProposed }: Props) {
           <div key={i} style={{ ...styles.bubble, ...(m.role === 'user' ? styles.userBubble : styles.aiBubble) }}>
             <span style={styles.role}>{m.role === 'user' ? 'あなた' : 'AI'}</span>
             <p style={styles.text}>{m.text}</p>
+            {m.clarifications?.length ? (
+              <div style={styles.chips}>
+                {m.clarifications.map((q, qi) => (
+                  <button
+                    key={qi}
+                    style={styles.chip}
+                    onClick={() => handleClarificationTap(q)}
+                    title="クリックすると入力欄に回答テンプレートが入ります"
+                  >
+                    💬 {q}
+                  </button>
+                ))}
+              </div>
+            ) : null}
             {m.patches?.length ? (
               <button
                 style={styles.viewPatch}
@@ -92,6 +120,7 @@ export function ChatView({ onPatchesProposed }: Props) {
 
       <div style={styles.inputArea}>
         <textarea
+          ref={textareaRef}
           style={styles.textarea}
           value={input}
           onChange={e => setInput(e.target.value)}
@@ -163,6 +192,23 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     padding: 0,
     textDecoration: 'underline',
+  },
+  chips: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 6,
+  },
+  chip: {
+    fontSize: 12,
+    color: '#1d4ed8',
+    background: '#eff6ff',
+    border: '1px solid #bfdbfe',
+    borderRadius: 14,
+    padding: '4px 10px',
+    cursor: 'pointer',
+    textAlign: 'left',
+    lineHeight: 1.4,
   },
   inputArea: {
     display: 'flex',
