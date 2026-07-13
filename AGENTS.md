@@ -198,9 +198,10 @@ exports（提出物・再生成可能）
 |---|---|
 | workspace isolation の実装設計（session-scope validation） | **完了**（Task2 / ADR-006） |
 | ユーザーの OpenAI 鍵を AppServer がどう受け取るかの設計 | **credential 非管理へ転換**（`ai-foundation-direction.md`、ADR 化候補） |
-| extraction-specification.md の AI provider 記述の訂正 | Codex CLI 正式経路に合わせ訂正（**Codex CLI provider 実装時**） |
+| extraction-specification.md の AI provider 記述の訂正 | **一部完了**（reply / 履歴の契約・prompt は更新済み）。§4 の旧実装例（Anthropic SDK）は歴史的記述として残存（バナーで注記） |
 | workspace_attachments テーブルのカラム定義の確定 | Task3（マルチユーザー / 認証）へ繰り延べ |
 | JWT クレーム設計・Go ミドルウェア・token refresh ポリシー | Task3 へ繰り延べ |
 | credential 非管理・Desktop First の ADR 化 | 近く起票（ADR-004 改訂 / supersede を含む） |
 | Desktop Host の技術選定（Electron / Tauri / Wails） | Editor MVP 後の別判断 |
-| Codex CLI provider の実装（実 AI・正式経路） | 次期実装候補 |
+| Codex CLI provider の実装（実 AI・正式経路） | **完了**（PR #19。実 AI で動作確認済み。有効化手順は `docs/implementation/ai/codex-cli-integration.md`） |
+| codex login への動線（オンボーディング） | 次期候補（`codex-cli-integration.md` 課題#1） |

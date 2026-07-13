@@ -43,13 +43,14 @@ MVP のコアループ完成後に取り組む候補。実装判断はプラン�
    配布可能な実行形式に codex CLI を同梱できるか、できたとしてユーザーへ重いインストールを強要せずに
    済むかが未検討。→ **Desktop Host（Electron/Tauri/Wails）判断と連動**（`ai-foundation-direction.md`）。
 
-3. **チャットが抽出専用で自由対話ができない**
-   現状の message 経路は毎ターンを fact 抽出として扱うため、非 fact の発言
-   （例：「他にどんな情報を書けばいいですか？」）で抽出 0 件となり `no facts extracted` エラーになる。
-   会話としての往復・聞き返しができない。
-   - 方向性（未決定・要設計）：(a) 0 件時をエラーにせずグレースフルな会話返信にする、
-     (b) 「会話 vs 抽出」を判断するオーケストレーション層を設ける（Workspace Agent とは別責務）。
-   - clarification questions（現状 source_detail に埋め込み）を一級の対話に昇格する検討とも関連。
+3. ~~チャットが抽出専用で自由対話ができない~~ → **解決済み（2026-07-19, PR #21/#22/#23）**
+   - PR #21: AI 出力契約に `reply`（会話返信）を追加し 0 件抽出を許容。非 fact の発言は会話として応答
+     （`extraction-specification.md` §3/§5 が SSOT。`/extract` の 0 件→422 は不変）。
+   - PR #22: 会話履歴（transcript・直近 10 ターン）を導入。既出 fact への詳細追加は同じ
+     `fact_id_hint` を再利用 → 同一 fact_id の upsert で **聞き返しに答えると fact が育つ**。
+   - PR #23: clarification questions を `clarifications[]` として応答に集約し、チャット UI に
+     質問チップとして一級表示（タップで回答テンプレをプリフィル）。
+   - 実 AI（gpt-5.4）で会話・抽出・enrich の全モードを smoke 済み。
 
 ## 関連
 - `docs/implementation/ai/ai-foundation-direction.md`（正式経路・credential 非管理・Desktop First・Runtime 非抽象化）
