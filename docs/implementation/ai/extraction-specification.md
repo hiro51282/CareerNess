@@ -5,9 +5,11 @@
 > - 誤: `github.com/anthropic-ai/sdk-go`（Anthropic SDK）を使った Claude API 直接呼び出し  
 > - 正: ユーザー自身の **OpenAI アカウント（Codex 経由）** を使う（ADR-004 で確定）  
 >
-> 以下の実装例（section 4.2 の `callClaudeAPI`、`claude-opus-4-7` モデル使用等）は
-> **OpenAI SDK を使った実装に差し替える** 必要がある。
-> コード例の他の部分（pipeline 構造、validation、normalization）は引き続き有効。
+> **[更新 2026-07-19]** 正式経路は **Codex CLI**（`internal/extraction/codex_cli_provider.go`）として
+> **実装済み**。HTTP/OpenAI 直叩き provider は credential 非管理原則により deprecated
+> （`ai-foundation-direction.md` / `codex-cli-integration.md` 参照）。
+> section 4 のコード例（`callClaudeAPI` 等）は**歴史的な設計参考**であり、現実装とは異なる。
+> pipeline 構造・validation・normalization の記述は引き続き有効。
 
 > **[拡張 2026-07-06] 会話返信（reply）の追加**  
 > チャットを「抽出専用」から「会話しながら抽出する」へ拡張した。AI 出力契約

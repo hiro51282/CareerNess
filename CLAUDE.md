@@ -11,7 +11,7 @@
 | モノレポ | pnpm workspaces（Turborepo/Nx は使わない） |
 | ワークスペース読み書き | File System Access API（ブラウザ側、Chrome/Edge のみ） |
 | データ形式 | YAML |
-| AI 統合 | Structured Extraction Provider（現状 Mock、正式経路は Codex CLI）。`docs/implementation/ai/ai-foundation-direction.md` 参照 |
+| AI 統合 | Structured Extraction Provider（既定 Mock、正式経路の Codex CLI は実装済み・env で有効化）。`docs/implementation/ai/ai-foundation-direction.md` / `codex-cli-integration.md` 参照 |
 
 pnpm は `~/.local/bin/pnpm` に入っている。
 
@@ -50,10 +50,12 @@ PR は自動 Checker（CI）と以下ローカル検証が緑であること（L
 ## プロジェクト状況
 
 CareerNess は **CareerNESS Editor（Career Vault の編集ツール）MVP のコアループ完成**フェーズです。
-チャット → Fact 抽出 → レビュー → Vault 反映 → Facts 閲覧 → 確定（`proposed` → `confirmed`）まで app 内で一巡できる。
+チャット（自由対話・AI の聞き返しチップ付き）→ Fact 抽出 → レビュー → Vault 反映 → Facts 閲覧 → 確定
+（`proposed` → `confirmed`）まで app 内で一巡でき、聞き返しに答えると同じ fact が更新される（会話履歴対応）。
 
 - 実装は `apps/api`（Go: `internal/` の extraction / patch / workspace / session / handler / ai）と `apps/web`（React）にある（`packages/*` は現状スタブ）。
-- Fact 抽出は現状 **Mock Provider**。実 AI の正式経路は **Codex CLI**（今後実装）。方向性は `docs/implementation/ai/ai-foundation-direction.md`。
+- Fact 抽出は既定 **Mock Provider**。実 AI の正式経路 **Codex CLI は実装済み**（`EXTRACTION_PROVIDER=codex-cli` で有効化。
+  手順・モデル注意は `docs/implementation/ai/codex-cli-integration.md`）。方向性は `docs/implementation/ai/ai-foundation-direction.md`。
 - 開発プロセスは **Loop Engineering（Maker/Checker）**。`AGENTS.md` と CI（`.github/workflows/ci.yml`）を参照。
 
 ## リポジトリ構成
