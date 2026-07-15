@@ -146,15 +146,17 @@ CI 緑・レビュー済みの PR は **Claude Code が自己マージ**する�
 | ADR-001 | AI が参照・変更できる範囲は attach 済み workspace のみ |
 | ADR-002 | 全ての workspace 変更は patch proposal → ユーザー承認 → apply の順 |
 | ADR-003 | CareerVault（facts / profiles / exports の正本）はローカルに置く。DB に career data を入れない |
-| ADR-004 | AI 呼び出しはユーザー自身の OpenAI アカウント（Codex 経由）。CareerNESS 運営は請求主体にならない。**注: credential 非管理＋Codex CLI 正式経路へ転換予定（`ai-foundation-direction.md`、ADR 化候補）** |
+| ADR-004 | AI 呼び出しはユーザー自身の OpenAI アカウント。CareerNESS 運営は請求主体にならない（**credential の取り扱いは ADR-007 で改訂**） |
 | ADR-005 | Git-backed sync は CareerNESS の提供機能としてスコープ外 |
 | ADR-006 | AI の workspace 変更は attach された root 配下に封じ込める（session 束縛 + `workspace.ResolveWithin` で強制）|
+| ADR-007 | CareerNESS は AI provider の credential を保持・保存・中継しない。正式経路は Codex CLI（HTTP provider は deprecated・休眠保持） |
+| ADR-008 | Desktop First。Desktop Host は **Electron**（PoC ゲート付き・fallback Tauri v2）。**main は薄く保ち、ロジックは Go に置く（thin-main）** |
 
-**AI 基盤のプロダクト原則**（`ai-foundation-direction.md`、ADR 化候補）:
+**AI 基盤のプロダクト原則**（ADR-007 / ADR-008 として確定。設計メモは `ai-foundation-direction.md`）:
 
-- CareerNESS は AI provider の credential を管理しない（信頼境界）
+- CareerNESS は AI provider の credential を管理しない（信頼境界、ADR-007）
 - Structured Extraction の正式経路は **Codex CLI**（HTTP provider は deprecated・休眠保持）
-- Desktop First は現時点のプロダクト方針（Desktop Host の実装技術は未決定・別判断）
+- Desktop First。Desktop Host は Electron（ADR-008、thin-main 原則）
 - Runtime 抽象化はしない（YAGNI）。Workspace Agent は Provider の置き換えでなく別責務として将来共存
 
 ### データ階層の不変則
@@ -201,7 +203,7 @@ exports（提出物・再生成可能）
 | extraction-specification.md の AI provider 記述の訂正 | **一部完了**（reply / 履歴の契約・prompt は更新済み）。§4 の旧実装例（Anthropic SDK）は歴史的記述として残存（バナーで注記） |
 | workspace_attachments テーブルのカラム定義の確定 | Task3（マルチユーザー / 認証）へ繰り延べ |
 | JWT クレーム設計・Go ミドルウェア・token refresh ポリシー | Task3 へ繰り延べ |
-| credential 非管理・Desktop First の ADR 化 | 近く起票（ADR-004 改訂 / supersede を含む） |
-| Desktop Host の技術選定（Electron / Tauri / Wails） | Editor MVP 後の別判断 |
+| credential 非管理・Desktop First の ADR 化 | **完了**（ADR-007 / ADR-008、2026-07-16） |
+| Desktop Host の技術選定（Electron / Tauri / Wails） | **完了**（ADR-008: Electron 採用・PoC ゲート付き）。次は Electron PoC |
 | Codex CLI provider の実装（実 AI・正式経路） | **完了**（PR #19。実 AI で動作確認済み。有効化手順は `docs/implementation/ai/codex-cli-integration.md`） |
 | codex login への動線（オンボーディング） | 次期候補（`codex-cli-integration.md` 課題#1） |

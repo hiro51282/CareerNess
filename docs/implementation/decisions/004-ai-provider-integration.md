@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted
+Accepted（**credential の取り扱いは ADR-007 で改訂**。「ユーザー自身のアカウント・運営は請求主体に
+ならない」は維持。「AppServer が key の中継層になる」前提と Open Question「key 受領方式」は
+ADR-007 が解決・置換した——CareerNESS は credential を受け取らない）
 
 ## Context
 
