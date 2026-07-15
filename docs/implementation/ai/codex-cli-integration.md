@@ -43,9 +43,9 @@ MVP のコアループ完成後に取り組む候補。実装判断はプラン�
    **アプリ内から `codex login` を起動する動線は未実装**（ブラウザからは device code フローを
    中継できないため、Desktop Host（課題#2）判断とセットで将来対応）。
 
-2. **配布（distribution）**
-   配布可能な実行形式に codex CLI を同梱できるか、できたとしてユーザーへ重いインストールを強要せずに
-   済むかが未検討。→ **Desktop Host（Electron/Tauri/Wails）判断と連動**（`ai-foundation-direction.md`）。
+2. **配布（distribution）** → **Host 方針決定（2026-07-16）**：Desktop Host は **Electron**（ADR-008、
+   thin-main 原則・PoC ゲート付き）。codex CLI の同梱可否／インストール誘導の具体設計は
+   Electron PoC・配布タスクで検証する（未実装）。
 
 3. ~~チャットが抽出専用で自由対話ができない~~ → **解決済み（2026-07-19, PR #21/#22/#23）**
    - PR #21: AI 出力契約に `reply`（会話返信）を追加し 0 件抽出を許容。非 fact の発言は会話として応答

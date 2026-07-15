@@ -1,8 +1,8 @@
 # AI 基盤の方向性（設計メモ）
 
 > 本書は ADR ではなく**設計意図の記録**。確定アーキテクチャ決定（却下案を伴う ADR）ではない。
-> ただし本メモの「プロダクト原則」「Desktop First」は方針が固まったため、近く ADR 化する候補
-> （ADR-004「AI Provider Integration」の改訂/supersede を含む。§末尾参照）。
+> **[確定 2026-07-16]** 本メモの「credential 非管理」は **ADR-007**、「Desktop First」と
+> Desktop Host 選定（**Electron**）は **ADR-008** として起票済み。確定判断はそちらが正。
 > 初版記録時点: Task4 Phase B 着手前 / 直近更新: プロダクト方針転換（Credential 非管理・Desktop First・Codex CLI 正式経路）を反映。
 
 CareerNESS はまず **Career Vault を編集・管理するための Editor（CareerNESS Editor）** を完成させることを
@@ -41,6 +41,7 @@ MVP では「**Credential を CareerNESS が管理しない**」ことを設計�
 **現時点のプロダクト方針**として採用する。
 
 一方で、**Desktop Host の実装技術（Electron / Tauri / Wails 等）は現時点では決定しない**。
+（→ **[決定 2026-07-16]** ADR-008 で **Electron** を採用。thin-main 原則・PoC ゲート付き。）
 ここは別判断として残す。移行は「作り直し」ではなく、**既存の React / Go / Provider 資産を
 最大限活かす**前提で行う。
 
@@ -116,11 +117,11 @@ Workspace Agent を追加する場合も、**既存 `ExtractionProvider` の責�
 - ✅ Runtime 抽象化はしない（Codex CLI のみ／CLI 実行部分だけ疎結合を維持）
 - ✅ Provider の責務を広げない（Workspace Agent は別責務として将来共存）
 
-## ADR 化の予定（メモ → 確定判断）
+## ADR 化の予定（メモ → 確定判断）→ 完了
 
-以下は方針が固まったため、近く ADR 化を検討する（本メモは先行する設計意図の記録）：
+**[2026-07-16 起票済み]** 本節の予定は以下の ADR として確定した（確定判断はそちらが正）：
 
-- **Credential 非管理のプロダクト原則**：ADR-004「AI Provider Integration」（ユーザーの OpenAI 鍵を
-  AppServer 経由で使う前提）を**改訂/supersede** する新 ADR。以前保留した「credential handling（ADR-007 相当）」は、
-  この原則により方向が確定する（案C→案B の鍵リレー路線は破棄）。
-- **Desktop First**：Desktop Host 採用の背景と、具体実装（Electron/Tauri）を別判断とする旨を記録する ADR。
+- **ADR-007**：CareerNESS は AI provider の credential を管理しない（ADR-004 の credential
+  取り扱い部分を改訂。鍵リレー路線は正式に破棄）。
+- **ADR-008**：Desktop First ＋ Desktop Host に **Electron** を採用（却下: Tauri / Wails / PWA。
+  thin-main 原則＝main は薄く・ロジックは Go。PoC ゲート付き・fallback は Tauri v2）。
