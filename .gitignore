@@ -9,6 +9,9 @@ pnpm-lock.yaml
 *.a
 *.so
 *.dylib
+implementation/apps/api/bin/
+implementation/apps/desktop/release/
+implementation/apps/desktop/resources/
 
 # Development
 .env.local

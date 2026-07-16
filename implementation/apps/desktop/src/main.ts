@@ -29,17 +29,25 @@ function findFreePort(): Promise<number> {
   })
 }
 
-/** Go サーババイナリと Web dist の場所を解決する（packaged / dev で切替）。 */
-function resolvePaths(): { serverBin: string; webDist: string } {
+/** Go サーババイナリ・Web dist・同梱 codex の場所を解決する（packaged / dev で切替）。 */
+function resolvePaths(): { serverBin: string; webDist: string; bundledCodex: string | null } {
   if (app.isPackaged) {
     const res = path.join(process.resourcesPath, 'careerness')
-    return { serverBin: path.join(res, 'server'), webDist: path.join(res, 'web') }
+    const exe = process.platform === 'win32' ? '.exe' : ''
+    const codex = path.join(res, `codex${exe}`)
+    return {
+      serverBin: path.join(res, `server${exe}`),
+      webDist: path.join(res, 'web'),
+      // codex を同梱している場合は絶対パスで Go へ渡す（GUI 起動の PATH 問題も回避）。
+      bundledCodex: fs.existsSync(codex) ? codex : null,
+    }
   }
   // dev: implementation/ からの相対（env で上書き可）
   const repo = path.join(__dirname, '..', '..', '..')
   return {
     serverBin: process.env.CAREERNESS_SERVER_BIN ?? path.join(repo, 'apps', 'api', 'bin', 'server'),
     webDist: process.env.CAREERNESS_WEB_DIST ?? path.join(repo, 'apps', 'web', 'dist'),
+    bundledCodex: null,
   }
 }
 
@@ -60,7 +68,7 @@ async function waitForHealth(port: number, timeoutMs = 15000): Promise<void> {
 
 /** Go サーバを子プロセスとして起動し、health 確認済みのポートを返す。 */
 async function startServer(): Promise<number> {
-  const { serverBin, webDist } = resolvePaths()
+  const { serverBin, webDist, bundledCodex } = resolvePaths()
   if (!fs.existsSync(serverBin)) {
     throw new Error(`Go サーババイナリが見つかりません: ${serverBin}`)
   }
@@ -69,9 +77,18 @@ async function startServer(): Promise<number> {
   }
 
   const port = await findFreePort()
-  serverProc = spawn(serverBin, [], {
+  const env: NodeJS.ProcessEnv = {
     // EXTRACTION_PROVIDER / CODEX_CLI_* 等はユーザー環境から透過する。
-    env: { ...process.env, PORT: String(port), CAREERNESS_WEB_DIST: webDist },
+    ...process.env,
+    PORT: String(port),
+    CAREERNESS_WEB_DIST: webDist,
+  }
+  // 同梱 codex があればユーザー指定が無い限りそれを使う（絶対パスで PATH 非依存）。
+  if (bundledCodex && !process.env.CODEX_CLI_BIN) {
+    env.CODEX_CLI_BIN = bundledCodex
+  }
+  serverProc = spawn(serverBin, [], {
+    env,
     stdio: ['ignore', 'pipe', 'pipe'],
   })
   serverProc.stdout?.on('data', (d: Buffer) => console.log(`[go] ${String(d).trimEnd()}`))

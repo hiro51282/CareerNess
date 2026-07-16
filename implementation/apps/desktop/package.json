@@ -6,11 +6,43 @@
   "main": "dist/main.js",
   "scripts": {
     "build": "tsc",
-    "start": "electron ."
+    "start": "electron .",
+    "stage": "bash scripts/stage.sh",
+    "dist:linux": "pnpm run build && pnpm run stage && electron-builder --linux AppImage --publish never"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
     "electron": "^43.1.1",
+    "electron-builder": "^26.15.3",
     "typescript": "^5.5.3"
+  },
+  "build": {
+    "appId": "app.careerness.desktop",
+    "productName": "CareerNESS",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/careerness",
+        "to": "careerness"
+      }
+    ],
+    "npmRebuild": false,
+    "linux": {
+      "target": "AppImage",
+      "category": "Office"
+    },
+    "win": {
+      "target": "nsis",
+      "signAndEditExecutable": false
+    },
+    "mac": {
+      "target": "dir",
+      "identity": null
+    }
   }
 }
