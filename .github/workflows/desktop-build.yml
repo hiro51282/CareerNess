@@ -1,0 +1,71 @@
+name: Desktop Build (unsigned)
+
+# win/mac の未署名ビルド成立性を確認する（Electron PoC D5 / ADR-008 ゲート）。
+# mac ランナーは minutes 10 倍・win は 2 倍を消費するため、手動トリガのみ。
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      # 未署名ビルド（署名は配布タスクで扱う）
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: implementation/apps/api/go.mod
+          cache-dependency-path: implementation/apps/api/go.sum
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install workspace deps
+        working-directory: implementation
+        run: pnpm install
+
+      - name: Build web (SPA dist)
+        working-directory: implementation
+        run: pnpm build:web
+
+      - name: Build desktop main (tsc)
+        working-directory: implementation/apps/desktop
+        run: pnpm run build
+
+      - name: Stage resources (Go server + web dist; codex はランナーに無いためスキップされる)
+        working-directory: implementation/apps/desktop
+        shell: bash
+        run: bash scripts/stage.sh
+
+      - name: Package (electron-builder, unsigned)
+        working-directory: implementation/apps/desktop
+        shell: bash
+        run: pnpm exec electron-builder --publish never
+
+      - name: List artifacts
+        working-directory: implementation/apps/desktop
+        shell: bash
+        run: ls -la release/ || true
+
+      - name: Upload Windows installer
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: careerness-windows-unsigned
+          path: implementation/apps/desktop/release/*.exe
+          retention-days: 3
+          if-no-files-found: error
