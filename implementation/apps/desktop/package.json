@@ -1,0 +1,16 @@
+{
+  "name": "desktop",
+  "private": true,
+  "version": "0.0.1",
+  "description": "CareerNESS Editor desktop shell (Electron, thin-main per ADR-008)",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "electron": "^43.1.1",
+    "typescript": "^5.5.3"
+  }
+}
