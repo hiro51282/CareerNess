@@ -25,6 +25,7 @@ func main() {
 	mux.HandleFunc("/api/v1/patches/validate", handler.PostValidatePatch)
 	mux.HandleFunc("/api/v1/extract", handler.PostExtract)
 	mux.HandleFunc("/api/v1/workspace/attach", handler.PostAttach(store))
+	mux.HandleFunc("/api/v1/workspace/files", handler.GetWorkspaceFiles(store))
 	mux.HandleFunc("/api/v1/apply-patch", handler.PostApplyPatch(store))
 
 	// ポートは env で可変（Electron が空きポートを子プロセスへ渡す。ADR-008）。
