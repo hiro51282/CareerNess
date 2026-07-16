@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useWorkspace } from '../workspace/useWorkspace'
-import type { Operation } from '../../types/patch'
+import type { Operation, Patch } from '../../types/patch'
 import { collectFacts, type FactEntry, type FactRecord } from './collectFacts'
 
 const TYPE_ORDER = ['experience', 'achievement', 'skill']
@@ -60,7 +60,7 @@ export function FactList() {
 }
 
 function FactCard({ entry }: { entry: FactEntry }) {
-  const { applyOperations } = useWorkspace()
+  const { applyPatch } = useWorkspace()
   const [open, setOpen] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -84,8 +84,21 @@ function FactCard({ entry }: { entry: FactEntry }) {
         confidence: 'high',
         fact_status_after: 'confirmed',
       }
+      // 最小の patch エンベロープ（desktop の Go 経路は patch.Validate を通るため必須項目を満たす。
+      // session_id / workspace_id は applyPatch が attachment に合わせて上書きする）。
+      const confirmPatch: Patch = {
+        patch_id: `patch-confirm-${Date.now()}`,
+        workspace_id: 'local-careervault',
+        session_id: 'sess-ui',
+        created_at: new Date().toISOString(),
+        created_by: 'user',
+        kind: 'workspace_patch',
+        summary: `fact を confirmed に更新: ${String(f.fact_id)}`,
+        status: 'proposed',
+        operations: [op],
+      }
       // 適用後 refreshFiles により status バッジが confirmed へ更新される。
-      await applyOperations([op])
+      await applyPatch(confirmPatch)
     } catch (e) {
       setError(String(e))
     } finally {

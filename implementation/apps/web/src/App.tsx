@@ -8,12 +8,12 @@ import { FactList } from './features/facts/FactList'
 import type { Patch } from './types/patch'
 
 function AppContent() {
-  const { dirHandle, workspaceId, files } = useWorkspace()
+  const { attached, workspaceId, files } = useWorkspace()
   const [pendingPatches, setPendingPatches] = useState<Patch[]>([])
   const [appliedNotice, setAppliedNotice] = useState<string | null>(null)
   const [view, setView] = useState<'chat' | 'facts'>('chat')
 
-  if (!dirHandle) {
+  if (!attached) {
     return <WorkspaceAttach />
   }
 

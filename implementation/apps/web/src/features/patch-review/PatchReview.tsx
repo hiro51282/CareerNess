@@ -12,7 +12,7 @@ interface Props {
 
 // 1 patch = 1 セマンティック変更（ADR-002）に沿い、複数 patch を逐次レビューする。
 export function PatchReview({ patches, onApplied, onClose }: Props) {
-  const { applyOperations } = useWorkspace()
+  const { applyPatch } = useWorkspace()
   const [index, setIndex] = useState(0)
   const [applying, setApplying] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -37,7 +37,7 @@ export function PatchReview({ patches, onApplied, onClose }: Props) {
     setApplying(true)
     setError(null)
     try {
-      const applied = await applyOperations(patch.operations)
+      const applied = await applyPatch(patch)
       appliedRef.current = [...appliedRef.current, ...applied]
       advance()
     } catch (e) {
