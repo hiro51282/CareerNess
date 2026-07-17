@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"careerness/api/internal/handler"
 	"careerness/api/internal/session"
@@ -24,14 +25,29 @@ func main() {
 	mux.HandleFunc("/api/v1/patches/validate", handler.PostValidatePatch)
 	mux.HandleFunc("/api/v1/extract", handler.PostExtract)
 	mux.HandleFunc("/api/v1/workspace/attach", handler.PostAttach(store))
+	mux.HandleFunc("/api/v1/workspace/files", handler.GetWorkspaceFiles(store))
 	mux.HandleFunc("/api/v1/apply-patch", handler.PostApplyPatch(store))
 
-	srv := &http.Server{
-		Addr:    ":8080",
-		Handler: corsMiddleware(mux),
+	// ポートは env で可変（Electron が空きポートを子プロセスへ渡す。ADR-008）。
+	// ローカル専用サーバのため loopback のみに bind する。
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
 	}
 
-	log.Println("CareerNess API starting on :8080")
+	var root http.Handler = corsMiddleware(mux)
+	// デスクトップでは Go がビルド済み SPA も配信し、フロントと API を同一オリジンにする。
+	if dist := os.Getenv("CAREERNESS_WEB_DIST"); dist != "" {
+		root = handler.NewSPAHandler(dist, corsMiddleware(mux))
+		log.Printf("serving SPA from %s", dist)
+	}
+
+	srv := &http.Server{
+		Addr:    "127.0.0.1:" + port,
+		Handler: root,
+	}
+
+	log.Printf("CareerNess API starting on 127.0.0.1:%s", port)
 	if err := srv.ListenAndServe(); err != nil {
 		log.Fatal(err)
 	}

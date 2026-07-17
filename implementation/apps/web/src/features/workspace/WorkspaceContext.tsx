@@ -1,24 +1,46 @@
 import { createContext, useState, useCallback, type ReactNode } from 'react'
-import type { Operation } from '../../types/patch'
+import type { Operation, Patch } from '../../types/patch'
+import { attachWorkspace, getWorkspaceFiles, applyPatchViaServer } from '../../api/client'
 import { upsertFactYaml, markFactStatusYaml } from './factFile'
+
+// desktop（Electron）モード判定。preload が window.careerness を公開している時のみ true。
+// desktop では attach/read/apply を Go 経路（ADR-006/008 の正規経路）で行い、
+// ブラウザでは従来どおり File System Access API を使う。
+const isDesktop = typeof window !== 'undefined' && window.careerness?.desktop === true
 
 export interface WorkspaceContextType {
   dirHandle: FileSystemDirectoryHandle | null
   workspaceId: string
   files: Map<string, string>
+  /** workspace が attach 済みか（browser: dirHandle / desktop: session）。 */
+  attached: boolean
   attach: () => Promise<void>
   refreshFiles: () => Promise<void>
-  applyOperations: (ops: Operation[]) => Promise<string[]>
+  /** 承認済み patch を workspace へ適用する（mode に応じ browser FS / Go 経路）。 */
+  applyPatch: (patch: Patch) => Promise<string[]>
 }
 
 export const WorkspaceContext = createContext<WorkspaceContextType | null>(null)
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [dirHandle, setDirHandle] = useState<FileSystemDirectoryHandle | null>(null)
+  const [desktopSession, setDesktopSession] = useState<string | null>(null)
   const [workspaceId, setWorkspaceId] = useState('local-careervault')
   const [files, setFiles] = useState<Map<string, string>>(new Map())
 
   const attach = useCallback(async () => {
+    if (isDesktop) {
+      // desktop: ネイティブダイアログ → 絶対パスを Go に attach（session 束縛）→ Go 経由で読込
+      const dir = await window.careerness!.pickDirectory()
+      if (!dir) return
+      const res = await attachWorkspace(dir)
+      setDesktopSession(res.session_id)
+      setWorkspaceId(res.workspace_id)
+      const wf = await getWorkspaceFiles(res.session_id)
+      setFiles(new Map(Object.entries(wf.files)))
+      console.debug(`[workspace] attached via server: ${res.workspace_id}`)
+      return
+    }
     const handle = await window.showDirectoryPicker({ mode: 'readwrite' })
     console.debug(`[workspace] attached: ${handle.name}`)
     setDirHandle(handle)
@@ -29,13 +51,19 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const refreshFiles = useCallback(async () => {
+    if (isDesktop) {
+      if (!desktopSession) return
+      const wf = await getWorkspaceFiles(desktopSession)
+      setFiles(new Map(Object.entries(wf.files)))
+      return
+    }
     if (!dirHandle) return
     const loaded = await readWorkspaceFiles(dirHandle)
     setFiles(loaded)
-  }, [dirHandle])
+  }, [dirHandle, desktopSession])
 
-  // 承認済み operations をワークスペースに書き込む。apply は AI ではなくブラウザ側の責務。
-  const applyOperations = useCallback(async (ops: Operation[]): Promise<string[]> => {
+  // ブラウザモード: 承認済み operations を File System Access API で書き込む。
+  const applyOperationsBrowser = useCallback(async (ops: Operation[]): Promise<string[]> => {
     if (!dirHandle) throw new Error('ワークスペースが attach されていません')
     const applied: string[] = []
 
@@ -61,8 +89,28 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     return applied
   }, [dirHandle, refreshFiles])
 
+  // 承認済み patch を workspace へ適用する。
+  // desktop: Go 経路（/apply-patch。session 束縛＋ResolveWithin。ADR-006 の正規経路）
+  // browser: File System Access API（従来経路）
+  const applyPatch = useCallback(async (patch: Patch): Promise<string[]> => {
+    if (isDesktop) {
+      if (!desktopSession) throw new Error('ワークスペースが attach されていません')
+      // attachment との整合（/apply-patch は workspace_id 一致を要求）を確実にする。
+      const bound: Patch = { ...patch, session_id: desktopSession, workspace_id: workspaceId }
+      const result = await applyPatchViaServer(desktopSession, bound)
+      if (result.failed_ops?.length) {
+        throw new Error(`一部の操作が失敗しました: ${result.failed_ops.join(' / ')}`)
+      }
+      await refreshFiles()
+      return [...new Set(patch.operations.map(op => op.target))]
+    }
+    return applyOperationsBrowser(patch.operations)
+  }, [desktopSession, workspaceId, refreshFiles, applyOperationsBrowser])
+
+  const attached = isDesktop ? desktopSession !== null : dirHandle !== null
+
   return (
-    <WorkspaceContext.Provider value={{ dirHandle, workspaceId, files, attach, refreshFiles, applyOperations }}>
+    <WorkspaceContext.Provider value={{ dirHandle, workspaceId, files, attached, attach, refreshFiles, applyPatch }}>
       {children}
     </WorkspaceContext.Provider>
   )
