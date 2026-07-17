@@ -6,6 +6,7 @@ package ai
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"unicode/utf8"
 
@@ -54,6 +55,17 @@ func Propose(ctx context.Context, req *ProposeRequest) (*ProposeResult, error) {
 	// これにより clarification への回答が既出 fact の更新（同一 fact_id_hint 再利用）に繋がる。
 	conversation := buildTranscript(req.History, req.Message)
 
+	// Vault の既存 facts をコンテキストとして先頭に付ける（extraction-specification §5）。
+	// AI は既存 fact への質問回答・重複抽出の回避・既存 fact の更新（同一 id 再利用）に使う。
+	if vault := buildVaultContext(req.WorkspaceFiles); vault != "" {
+		base := conversation
+		if len(req.History) == 0 {
+			// mock（latestUserStatement）と prompt 規約のため、最新発言に user: マーカーを付ける。
+			base = "user: " + req.Message
+		}
+		conversation = "[vault_facts]\n" + vault + "[/vault_facts]\n\n" + base
+	}
+
 	result, err := extraction.NewExtractionService(provider).
 		ExtractFromConversation(ctx, conversation, req.SessionID)
 	if err != nil {
@@ -99,7 +111,44 @@ func truncateRunes(s string, n int) string {
 const (
 	maxHistoryTurns = 10
 	maxHistoryChars = 4000
+	// Vault コンテキストの文字数上限（prompt 肥大＝レイテンシ/コストの抑制）。
+	maxVaultContextChars = 8000
 )
+
+// buildVaultContext は workspace_files から facts/ 配下の YAML だけを集め、
+// 上限付きの Vault コンテキスト（既存 facts の一覧）を組み立てる純関数。
+// パス順で安定化し、上限超過時は途中で打ち切って明示する。
+func buildVaultContext(files map[string]string) string {
+	if len(files) == 0 {
+		return ""
+	}
+	var paths []string
+	for p := range files {
+		lp := strings.ToLower(p)
+		if strings.HasPrefix(p, "facts/") && (strings.HasSuffix(lp, ".yaml") || strings.HasSuffix(lp, ".yml")) {
+			paths = append(paths, p)
+		}
+	}
+	if len(paths) == 0 {
+		return ""
+	}
+	sort.Strings(paths)
+
+	var b strings.Builder
+	for _, p := range paths {
+		section := "# file: " + p + "\n" + files[p] + "\n"
+		if b.Len()+len(section) > maxVaultContextChars {
+			remain := maxVaultContextChars - b.Len()
+			if remain > 0 {
+				b.WriteString(section[:remain])
+			}
+			b.WriteString("\n...(vault facts truncated)\n")
+			break
+		}
+		b.WriteString(section)
+	}
+	return b.String()
+}
 
 // buildTranscript は会話履歴＋最新発言から transcript を組み立てる純関数。
 // 形式は extraction-specification.md の会話拡張に従う:

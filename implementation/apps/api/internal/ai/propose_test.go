@@ -175,6 +175,67 @@ func TestPropose_HistoryKeepsFactClean(t *testing.T) {
 	}
 }
 
+// TestBuildVaultContext は Vault コンテキスト組み立ての純関数を検証する。
+func TestBuildVaultContext(t *testing.T) {
+	// facts/ 配下の yaml/yml のみを対象にする
+	files := map[string]string{
+		"facts/experiences.yaml": "- fact_id: fact-proj-a",
+		"facts/skills.yml":       "- fact_id: fact-skill-go",
+		"meta/workspace.yaml":    "name: vault",
+		"facts/notes.md":         "# not yaml",
+		"README.md":              "# readme",
+	}
+	got := buildVaultContext(files)
+	if !strings.Contains(got, "fact-proj-a") || !strings.Contains(got, "fact-skill-go") {
+		t.Errorf("facts の内容が含まれるべき: %q", got)
+	}
+	if strings.Contains(got, "name: vault") || strings.Contains(got, "readme") || strings.Contains(got, "not yaml") {
+		t.Errorf("facts/ 配下の yaml 以外は含めない: %q", got)
+	}
+	// パス順で安定（experiences が skills より先）
+	if strings.Index(got, "experiences.yaml") > strings.Index(got, "skills.yml") {
+		t.Error("パス順で安定化されるべき")
+	}
+
+	// 空・facts なしは空文字
+	if buildVaultContext(nil) != "" || buildVaultContext(map[string]string{"README.md": "x"}) != "" {
+		t.Error("facts が無ければ空文字を返すべき")
+	}
+
+	// 文字数上限で打ち切り＋明示
+	big := map[string]string{"facts/big.yaml": strings.Repeat("a", maxVaultContextChars*2)}
+	capped := buildVaultContext(big)
+	if len(capped) > maxVaultContextChars+64 {
+		t.Errorf("上限を超過: %d", len(capped))
+	}
+	if !strings.Contains(capped, "truncated") {
+		t.Error("打ち切りの明示が無い")
+	}
+}
+
+// TestPropose_VaultContextKeepsFactClean は vault コンテキスト付きでも
+// fact が最新発言から組み立てられる（コンテキストが description を汚さない）ことを検証する。
+func TestPropose_VaultContextKeepsFactClean(t *testing.T) {
+	latest := "2024年にXYZ社で監視基盤をDatadogへ移行した"
+	res, err := Propose(context.Background(), &ProposeRequest{
+		SessionID: "sess-test",
+		Message:   latest,
+		WorkspaceFiles: map[string]string{
+			"facts/experiences.yaml": "- fact_id: fact-proj-existing\n  summary: 既存の経験",
+		},
+	})
+	if err != nil {
+		t.Fatalf("Propose error: %v", err)
+	}
+	if len(res.Patches) != 1 {
+		t.Fatalf("patches = %d, want 1", len(res.Patches))
+	}
+	fact := res.Patches[0].Operations[0].Change.After.(*extraction.YAMLFact)
+	if fact.Description != latest {
+		t.Errorf("description が vault コンテキストで汚染: %q", fact.Description)
+	}
+}
+
 // TestPropose_SummaryTruncation は長い発言が summary 用に短縮されることを確認する。
 func TestPropose_SummaryTruncation(t *testing.T) {
 	long := ""
