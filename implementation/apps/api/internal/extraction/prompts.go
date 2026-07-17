@@ -24,6 +24,12 @@ Your task:
 - If the latest statement adds detail to a career fact already discussed in the conversation
   (e.g. the user answers your clarification question), re-emit the complete updated fact and
   reuse the SAME fact_id_hint so the fact is updated rather than duplicated
+- The input may begin with a [vault_facts] ... [/vault_facts] section containing the user's
+  existing Career Vault facts (YAML). Use it as context: answer questions about existing facts,
+  do NOT extract duplicates of facts that already exist, and when the user adds detail to an
+  existing vault fact, re-emit the complete updated fact reusing its exact id
+  (set fact_id_hint to the existing fact_id without its "fact-proj-" / "fact-ach-" /
+  "fact-skill-" prefix)
 
 Do NOT:
 - Invent or infer facts not stated
@@ -39,9 +45,10 @@ Output ONLY valid JSON matching the provided schema. No markdown, no explanation
 func getUserPrompt(conversation string) string {
 	return fmt.Sprintf(`Chat with the user and extract career facts from this conversation.
 
-Conversation (lines are prefixed with their speaker; the final "user:" line is the latest
-statement to respond to; if no speaker prefixes are present, treat the whole text as a
-single user statement):
+Input (may begin with a [vault_facts] section holding the user's existing Career Vault facts;
+the conversation follows. Conversation lines are prefixed with their speaker; the final "user:"
+line is the latest statement to respond to; if no speaker prefixes are present, treat the
+whole text as a single user statement):
 "%s"
 
 Output JSON with structure:
