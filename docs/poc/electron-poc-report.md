@@ -4,7 +4,7 @@
 
 ## 判定: **GO**（Electron 採用を維持。致命的問題なし・Tauri 再評価は不要）
 
-※ win/mac ビルド成立（ゲート条件4）のみ、workflow_dispatch の制約上 **master マージ後に実行**して確定する（後述）。
+※ 全ゲート条件クリア（win/mac ビルドは 2026-07-17 に両 OS success を確認済み）。
 
 ## ゲート条件と結果
 
@@ -13,7 +13,7 @@
 | 1 | ウィンドウ＋Go 子プロセスで attach→チャット→Go 経路 apply→Facts 反映 | ✅ SPA 配信→attach（絶対パス）→mock 抽出→`/apply-patch`(200)→`/workspace/files` 反映を確認。ウィンドウ起動・SPA 読込も確認 |
 | 2 | 終了時にプロセスリークなし | ✅ electron 本体へ SIGTERM → will-quit → Go 子プロセスも終了（dev/packaged 両方で確認） |
 | 3 | Linux パッケージから同梱 codex で実 AI | ✅ パッケージ版で `ai/status` が `ready:true "Logged in using ChatGPT"`（同梱 native バイナリ・絶対パス注入・`~/.codex` 認証共有） |
-| 4 | win/mac 未署名ビルド成立 | ⏳ workflow（manual dispatch）追加済み。**マージ後に実行して確定**（実機起動検証は配布タスク） |
+| 4 | win/mac 未署名ビルド成立 | ✅ **両 OS で success**（2026-07-17 run 29564246638、2m32s。Windows installer は artifact 化・実機起動検証は配布タスク） |
 | 5 | 致命的問題ゼロ | ✅ なし |
 
 ## 実測値
@@ -53,7 +53,7 @@ ADR-008 の重さ予測（インストーラ 80–150MB／展開 250–350MB）�
 
 ## 残作業（PoC 外）
 
-- win/mac ビルドの実行（マージ後 `gh workflow run desktop-build.yml`）と Windows 実機起動検証（実機入手後）
+- Windows 実機起動検証（実機入手後。installer artifact は workflow 再実行でいつでも取得可）
 - 配布タスク: codex 同梱方式の決定・署名・auto-updater・アプリ内 `codex login` 起動・localhost トークン
 - デスクトップ UI 磨き: WorkspaceAttach の文言（「Chrome/Edge が必要」は desktop で不適切）等
 
