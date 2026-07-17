@@ -67,12 +67,13 @@ function AppContent() {
             Facts
           </button>
         </div>
-        <div style={styles.viewArea}>
-          {view === 'chat' ? (
-            <ChatView onPatchesProposed={setPendingPatches} />
-          ) : (
-            <FactList />
-          )}
+        {/* タブ切替でアンマウントすると会話 state が消えるため、両ビューを常時
+            マウントし表示だけ切り替える（display: none 側は state を保持）。 */}
+        <div style={{ ...styles.viewArea, display: view === 'chat' ? 'flex' : 'none' }}>
+          <ChatView onPatchesProposed={setPendingPatches} />
+        </div>
+        <div style={{ ...styles.viewArea, display: view === 'facts' ? 'flex' : 'none' }}>
+          <FactList />
         </div>
       </main>
 
